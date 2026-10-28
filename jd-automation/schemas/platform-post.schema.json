@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "post_text": { "type": "string", "description": "Nội dung bài đăng, không gồm hashtag" },
+    "hashtags": { "type": "array", "items": { "type": "string" } },
+    "cta": { "type": "string" }
+  },
+  "required": ["post_text", "hashtags", "cta"],
+  "additionalProperties": false
+}

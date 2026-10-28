@@ -1,0 +1,93 @@
+{
+  "id": "exHelloWebhook01",
+  "name": "[dev] webhook-hello",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hello",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1a2b3c4d-0000-4000-8000-000000000001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "5f1e7a52-3c1b-4b6e-9d0a-1e110000a001"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "message",
+              "value": "={{ 'Xin chào ' + ($json.body.name || 'bạn') + '! n8n local đã chạy.' }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "receivedAt",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toISO() }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "echo",
+              "value": "={{ $json.body }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1a2b3c4d-0000-4000-8000-000000000002",
+      "name": "Build Greeting",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "1a2b3c4d-0000-4000-8000-000000000003",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "content": "## Webhook hello\n- **Webhook**: nhận POST tại `/webhook/hello` (production) hoặc `/webhook-test/hello` (test).\n- **Build Greeting**: tạo câu chào từ `body.name`, gắn giờ VN.\n- **Respond**: trả JSON về client.\n\nTest:\n```\ncurl -X POST http://localhost:5678/webhook-test/hello \\\n  -H 'Content-Type: application/json' -d '{\"name\":\"Lan\"}'\n```\nLỗi được chuyển tới `[dev] error-handler`.",
+        "height": 320,
+        "width": 480
+      },
+      "id": "1a2b3c4d-0000-4000-8000-000000000004",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -360]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Build Greeting", "type": "main", "index": 0 }]]
+    },
+    "Build Greeting": {
+      "main": [[{ "node": "Respond", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "exErrorHandler01"
+  },
+  "pinData": {},
+  "tags": []
+}

@@ -1,0 +1,1802 @@
+{
+  "updatedAt": "2026-10-28T04:48:53.976Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3PublishOne000",
+  "name": "[dev] jd-05a-publish-one",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        400
+      ],
+      "id": "3df8b946-1399-cf8d-2bda-70a19290bbea",
+      "name": "[One] When called"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Kiểm tra giới hạn ký tự theo tài liệu từng nền tảng và chọn nhánh xử lý.\n  const { post, config } = $input.first().json.request;\n  const LIMIT = { LinkedIn: 3000, Threads: 500, 'Facebook Page': 63206, 'Facebook Groups': 63206 };\n  const ROUTE = { LinkedIn: 'linkedin', Threads: 'threads', 'Facebook Page': 'facebook_page', 'Facebook Groups': 'facebook_groups' };\n  const text = String(post.post_text || '').trim();\n  // Threads tính emoji theo số byte UTF-8 (tài liệu Threads API)\n  const enc = new TextEncoder();\n  const threadsLength = (s) => [...s].reduce((n, ch) => n + (/\\p{Extended_Pictographic}/u.test(ch) ? enc.encode(ch).length : 1), 0);\n  const length = post.platform === 'Threads' ? threadsLength(text) : [...text].length;\n  const isTrue = (v) => v === true || String(v) === 'true';\n  let route = ROUTE[post.platform];\n  let reason = '';\n  if (!route) { route = 'invalid'; reason = `Nền tảng không hỗ trợ: ${post.platform}`; }\n  else if (post.action === 'confirm_manual') route = 'confirm_manual';\n  else if (post.action === 'already_posted') route = 'already_posted';\n  else if (!text) { route = 'invalid'; reason = 'Bài rỗng'; }\n  else if (length > LIMIT[post.platform]) { route = 'invalid'; reason = `Vượt giới hạn ${LIMIT[post.platform]} ký tự của ${post.platform} (hiện ${length})`; }\n  else if (isTrue(config.dry_run)) route = 'dry_run';\n  const needsPosterBinary = ['linkedin', 'facebook_page'].includes(route) && !!post.poster_file_id;\n  return [{ json: { post, config, text, length, route, reason, needs_poster_binary: needsPosterBinary } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        400
+      ],
+      "id": "b58ea687-08b4-0f31-be6c-b5ae163fcfa7",
+      "name": "[One] Precheck",
+      "notes": "Why Code: kiểm tra độ dài theo quy tắc riêng của Threads (emoji tính theo byte) và chọn route."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a9ec00c9-b2bd-d004-b73f-3b8a9a1d540f",
+              "leftValue": "={{ $json.needs_poster_binary }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "fc299614-6d96-8bf1-fe02-1065da27c4d7",
+      "name": "[One] Needs poster file?"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[One] Precheck').first().json.post.poster_file_id }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        660,
+        300
+      ],
+      "id": "76324fa0-9563-a039-2934-f470c8270947",
+      "name": "[One] Download poster",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d00720b9-be5f-dcf0-84db-9fd15cba6d1d",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "dry_run",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "dry_run"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a18127f9-d83f-d68c-8f77-550baa9d6622",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "linkedin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "linkedin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "04d43eae-9406-263d-7662-878165b68ab5",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "threads",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "threads"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3c51a3fb-56d0-cd48-4392-f05b9a3d38ef",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "facebook_page",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "facebook_page"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7701ec11-877f-3f4c-7589-9e2951a757e4",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "facebook_groups",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "facebook_groups"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "741a999a-5a56-ab39-8936-b079101185c4",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "confirm_manual",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "confirm_manual"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5a2cbcd7-61cc-c92c-9a82-574448ceb246",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "already_posted",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "already_posted"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "de420609-ae2d-c26a-752b-097f3b444067",
+                    "leftValue": "={{ $('[One] Precheck').first().json.route }}",
+                    "rightValue": "invalid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "invalid"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        880,
+        400
+      ],
+      "id": "835ec8dd-be4f-4c42-c495-3d8638c2d763",
+      "name": "[One] Route by platform"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Không gọi API: ghi lại chính xác các lời gọi SẼ thực hiện + nội dung bài.\n  const { post, config, text, length } = $('[One] Precheck').first().json;\n  const hasPoster = !!post.poster_file_id;\n  const steps = {\n    LinkedIn: [\n      hasPoster ? `POST https://api.linkedin.com/rest/images?action=initializeUpload (owner urn:li:person:${config.linkedin_person_id}) → PUT ảnh poster` : 'Không có poster → bài chỉ có chữ',\n      `POST https://api.linkedin.com/rest/posts (Linkedin-Version 202604, author urn:li:person:${config.linkedin_person_id}, visibility PUBLIC)`,\n    ],\n    Threads: (() => {\n      const mode = config.threads_image_mode;\n      const img = mode === 'text_only' || !hasPoster ? 'TEXT' : 'IMAGE';\n      const threadSteps = [\n        `POST ${config.threads_api_base}/${config.threads_user_id}/threads (media_type=${img}${img === 'IMAGE' ? `, image_url theo chế độ ${mode}` : ''})`,\n        `Chờ ${config.threads_wait_seconds}s để Threads xử lý container`,\n        `POST ${config.threads_api_base}/${config.threads_user_id}/threads_publish (creation_id=<id container>)`,\n      ];\n      return threadSteps;\n    })(),\n    'Facebook Page': [\n      hasPoster\n        ? `POST https://graph.facebook.com/${config.facebook_graph_version}/${config.facebook_page_id}/photos (multipart source=poster, caption=nội dung)`\n        : `POST https://graph.facebook.com/${config.facebook_graph_version}/${config.facebook_page_id}/feed (message=nội dung)`,\n    ],\n    'Facebook Groups': [\n      'KHÔNG gọi API (Meta đã gỡ Groups API từ 22/04/2024).',\n      `Gửi bài + poster + link nhóm tới người phụ trách qua: ${config.notify_channel === 'telegram' ? 'Telegram' : '(chưa cấu hình kênh — chỉ ghi Sheet)'}`,\n      'Trạng thái sẽ là \"Manual - Waiting\"; người phụ trách đổi sang \"Manual - Confirmed\" sau khi đăng tay.',\n    ],\n  }[post.platform] || ['(không rõ nền tảng)'];\n  const log = [\n    `[DRY_RUN] ${post.platform} · ${post.post_key} · ${$now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss')}`,\n    `Độ dài: ${length} ký tự · Poster: ${post.poster_url || '(không có)'}`,\n    ...steps.map((s, i) => `${i + 1}. ${s}`),\n    '--- Nội dung sẽ đăng ---',\n    text,\n  ].join('\\n');\n  const result = {\n    post_key: post.post_key, platform: post.platform, status: 'Dry Run',\n    platform_post_id: '', post_url: '', published_at: '', error_message: '',\n    retry_count: Number(post.retry_count || 0), scheduled_at: post.scheduled_at || '',\n    publish_log: log, alert: false, alert_text: '',\n  };\n  return [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1160,
+        0
+      ],
+      "id": "cb2dc708-fb13-e889-5788-e1ca234e63be",
+      "name": "[One] Dry run log",
+      "notes": "Why Code: dựng log nhiều dòng mô tả lời gọi API theo từng nền tảng mà không gọi API thật."
+    },
+    {
+      "parameters": {
+        "postAs": "person",
+        "person": "={{ $('[One] Precheck').first().json.config.linkedin_person_id }}",
+        "text": "={{ $('[One] Precheck').first().json.text }}",
+        "shareMediaCategory": "={{ $binary?.data ? 'IMAGE' : 'NONE' }}",
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "visibility": "PUBLIC"
+        }
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1160,
+        160
+      ],
+      "id": "cc233045-88ae-9414-ea1b-7691b96941bb",
+      "name": "[One] LinkedIn create post",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "196ed9f4-101e-8cac-54e6-cb360aafb7d8",
+              "name": "post_key",
+              "value": "={{ $('[One] Precheck').first().json.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "498a7706-b03f-d1fc-6f18-c2d8ee6577f9",
+              "name": "platform",
+              "value": "={{ $('[One] Precheck').first().json.post.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "2177edf0-adca-88ba-e0cf-084d88075dc7",
+              "name": "status",
+              "value": "Published",
+              "type": "string"
+            },
+            {
+              "id": "f2341351-8e65-174e-7e70-528cf4b67caf",
+              "name": "platform_post_id",
+              "value": "={{ $json.urn }}",
+              "type": "string"
+            },
+            {
+              "id": "dd15e16a-ac80-ef0d-2bfd-fcadb6c7b6ce",
+              "name": "post_url",
+              "value": "={{ 'https://www.linkedin.com/feed/update/' + $json.urn + '/' }}",
+              "type": "string"
+            },
+            {
+              "id": "b5ca32b7-fb7e-39dc-fba9-a30abba26032",
+              "name": "published_at",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "72dccaf5-5e4c-4667-b0a9-b5d477e81e09",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "94697d70-8628-11f1-22c8-0cc9e054afa6",
+              "name": "retry_count",
+              "value": "={{ Number($('[One] Precheck').first().json.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "c1ce0b27-745a-509c-ffaa-1128fdca4123",
+              "name": "scheduled_at",
+              "value": "={{ $('[One] Precheck').first().json.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "e5ddab97-81c7-354e-3cdc-acf412eb6812",
+              "name": "publish_log",
+              "value": "={{ \"LinkedIn OK: \" + $json.urn }}",
+              "type": "string"
+            },
+            {
+              "id": "f3adb49d-25e3-ab1d-31d4-246df0ff27b9",
+              "name": "alert",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "1e9da760-2d81-722f-d577-ce66ae176ace",
+              "name": "alert_text",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1400,
+        160
+      ],
+      "id": "49cc6bcb-5470-cd8c-8b3c-7686eada210e",
+      "name": "[One] Result · LinkedIn",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f4c5ed4f-d7ff-b6c6-0fe2-5c821e5e2967",
+              "name": "image_url",
+              "value": "={{ (c => { const id = $('[One] Precheck').first().json.post.poster_file_id; if (!id || c.threads_image_mode === 'text_only') return ''; if (c.threads_image_mode === 'url_template') return String(c.threads_image_url_template || '').replace('{file_id}', id); return 'https://drive.google.com/uc?export=download&id=' + id; })($('[One] Precheck').first().json.config) }}",
+              "type": "string"
+            },
+            {
+              "id": "37e79302-7366-40e3-c8f2-a7d1c148aa7b",
+              "name": "needs_share",
+              "value": "={{ $('[One] Precheck').first().json.config.threads_image_mode === 'drive_public' && !!$('[One] Precheck').first().json.post.poster_file_id }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1160,
+        360
+      ],
+      "id": "fdc40793-b18e-53c4-a083-7d3b13a68347",
+      "name": "[One] Threads image URL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d86df323-8e3c-3700-ac29-bdafbf8a2d08",
+              "leftValue": "={{ $json.needs_share }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1380,
+        360
+      ],
+      "id": "6fd0d73e-be59-80e5-015c-e16244b5d58b",
+      "name": "[One] Share poster for Threads?"
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[One] Precheck').first().json.post.poster_file_id }}"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1600,
+        300
+      ],
+      "id": "231e32de-c3ac-fea4-de48-59568db111b5",
+      "name": "[One] Share poster (Threads)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('[One] Precheck').first().json.config.threads_api_base }}/{{ $('[One] Precheck').first().json.config.threads_user_id }}/threads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify($('[One] Threads image URL').first().json.image_url ? { media_type: 'IMAGE', image_url: $('[One] Threads image URL').first().json.image_url, text: $('[One] Precheck').first().json.text } : { media_type: 'TEXT', text: $('[One] Precheck').first().json.text }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1820,
+        360
+      ],
+      "id": "36f2dc14-ed6a-3963-72ff-1eec5b6950a6",
+      "name": "[One] Threads create container",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ Number($('[One] Precheck').first().json.config.threads_wait_seconds || 30) }}",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2040,
+        360
+      ],
+      "id": "c7b76680-c331-33dc-af7b-5ae710ef7fbe",
+      "name": "[One] Threads wait for processing",
+      "webhookId": "750dff00-5f69-ad8f-6944-31ae3d72742f"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('[One] Precheck').first().json.config.threads_api_base }}/{{ $('[One] Precheck').first().json.config.threads_user_id }}/threads_publish",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ creation_id: $('[One] Threads create container').first().json.id }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2260,
+        360
+      ],
+      "id": "c7215b1d-06e8-7a1f-7c64-3d0a095311bf",
+      "name": "[One] Threads publish",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('[One] Precheck').first().json.config.threads_api_base }}/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id,permalink"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2480,
+        360
+      ],
+      "id": "7e4e6f47-735b-a818-fd8a-cfeafbf6022f",
+      "name": "[One] Threads get permalink",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2e6fcd0f-f93e-23cb-a7f9-7c67be42784d",
+              "name": "post_key",
+              "value": "={{ $('[One] Precheck').first().json.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "d8c293d9-8b6b-5693-711a-5086c91b49d2",
+              "name": "platform",
+              "value": "={{ $('[One] Precheck').first().json.post.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "b0a85b26-bbc6-b34f-1375-ad65add6f8c1",
+              "name": "status",
+              "value": "Published",
+              "type": "string"
+            },
+            {
+              "id": "f9604194-2f3f-779c-ff66-81afbc4d9579",
+              "name": "platform_post_id",
+              "value": "={{ $('[One] Threads publish').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c0451f4e-47ba-ff6c-158b-9eccaf996f98",
+              "name": "post_url",
+              "value": "={{ $json.permalink ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ea909638-3cc8-68c9-b325-aeba62a7e3bf",
+              "name": "published_at",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "adee0488-fb5f-3567-25ce-51bbfe28a717",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "223841b4-b113-5f7b-1f05-2672d4b0055a",
+              "name": "retry_count",
+              "value": "={{ Number($('[One] Precheck').first().json.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "812b5256-f645-1f59-a390-1102619fbbad",
+              "name": "scheduled_at",
+              "value": "={{ $('[One] Precheck').first().json.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "b772f0a6-0e88-91dd-cc54-9bc306d4b06a",
+              "name": "publish_log",
+              "value": "={{ 'Threads OK (' + ($('[One] Threads image URL').first().json.image_url ? 'IMAGE' : 'TEXT') + '): ' + $('[One] Threads publish').first().json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f8c9defa-f8c9-507b-5953-19c2c43f3c6a",
+              "name": "alert",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "6ab62911-c61b-9dd0-ea43-b1da870da6bc",
+              "name": "alert_text",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2700,
+        360
+      ],
+      "id": "bb3009da-c1fa-d3c3-a2ce-2c6fb2bf99dc",
+      "name": "[One] Result · Threads",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "73520d06-7cd1-b544-0dca-f49f023e280a",
+              "leftValue": "={{ Boolean($binary?.data) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1160,
+        600
+      ],
+      "id": "9ba0695e-df57-1dc3-337f-a1c4b7e24efb",
+      "name": "[One] Facebook has image?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('[One] Precheck').first().json.config.facebook_graph_version }}/{{ $('[One] Precheck').first().json.config.facebook_page_id }}/photos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "source",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('[One] Precheck').first().json.text }}"
+            },
+            {
+              "name": "published",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        540
+      ],
+      "id": "28ce746f-38d3-a493-7b5b-d8b410151072",
+      "name": "[One] Facebook post photo",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('[One] Precheck').first().json.config.facebook_graph_version }}/{{ $('[One] Precheck').first().json.config.facebook_page_id }}/feed",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('[One] Precheck').first().json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        700
+      ],
+      "id": "2c008d89-4070-70b6-1f4a-c9310e002412",
+      "name": "[One] Facebook post text",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1255865a-fea2-dfd9-5adc-19488f553095",
+              "name": "post_key",
+              "value": "={{ $('[One] Precheck').first().json.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "6d8eebbb-6725-4240-72a2-1076aa8cd819",
+              "name": "platform",
+              "value": "={{ $('[One] Precheck').first().json.post.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "b46ab80f-a931-ad5a-b581-eb90c0e49690",
+              "name": "status",
+              "value": "Published",
+              "type": "string"
+            },
+            {
+              "id": "9c840ae0-598c-7d51-46d6-93af8cb29f17",
+              "name": "platform_post_id",
+              "value": "={{ $json.post_id ?? $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "0b444394-4527-4d6e-f3b4-4c07ff6bdd7d",
+              "name": "post_url",
+              "value": "={{ 'https://www.facebook.com/' + ($json.post_id ?? $json.id) }}",
+              "type": "string"
+            },
+            {
+              "id": "76b1e1b8-b1cc-2d0d-c481-8de2a035a2f0",
+              "name": "published_at",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "72c1e0f3-f0b7-c006-54b4-d46357e51539",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "a4401149-a1d7-b3ce-4db2-10c6b7ca7bca",
+              "name": "retry_count",
+              "value": "={{ Number($('[One] Precheck').first().json.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "7d922b67-2b0d-8737-2842-3f007eabc780",
+              "name": "scheduled_at",
+              "value": "={{ $('[One] Precheck').first().json.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "64d8cc0d-9c8a-ba16-8579-e83e12bbbfdc",
+              "name": "publish_log",
+              "value": "={{ \"Facebook Page OK: \" + ($json.post_id ?? $json.id) }}",
+              "type": "string"
+            },
+            {
+              "id": "55efaaee-a393-6362-cfca-ddc9b8689655",
+              "name": "alert",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "d6db516f-7068-3365-9fc6-61234e39ab3a",
+              "name": "alert_text",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1620,
+        600
+      ],
+      "id": "4be4c88b-9c51-6ab5-3954-ca0b80b8fe2a",
+      "name": "[One] Result · Facebook Page",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d9d24bbf-7d25-d61f-2476-112a61f36327",
+              "name": "post_key",
+              "value": "={{ $('[One] Precheck').first().json.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "19646ccf-bb8b-e37b-3807-22afc8964dd1",
+              "name": "platform",
+              "value": "={{ $('[One] Precheck').first().json.post.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "30b61d43-faac-6610-52f3-26a21a54dcd8",
+              "name": "status",
+              "value": "Manual - Waiting",
+              "type": "string"
+            },
+            {
+              "id": "e8083149-2109-b99a-c0c3-c0a915ff90af",
+              "name": "platform_post_id",
+              "value": "={{ $('[One] Precheck').first().json.post.platform_post_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a417f4ff-7ea6-4b2b-ba2e-34fe626836f5",
+              "name": "post_url",
+              "value": "={{ $('[One] Precheck').first().json.post.post_url || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "1229073f-bb43-3129-57c8-d20100d22c35",
+              "name": "published_at",
+              "value": "={{ $('[One] Precheck').first().json.post.published_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "6d211ffd-ff80-5971-581d-9ebce16fbac3",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "926be538-16e1-351f-6511-19d7a27faaef",
+              "name": "retry_count",
+              "value": "={{ Number($('[One] Precheck').first().json.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "362f24ec-acd6-8b7a-2152-a1c879f1de71",
+              "name": "scheduled_at",
+              "value": "={{ $('[One] Precheck').first().json.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "b0935a8a-6cb8-3783-fb29-cae04bba16a5",
+              "name": "publish_log",
+              "value": "={{ 'Chờ đăng tay vào các nhóm:\\n' + ($('[One] Precheck').first().json.config.facebook_group_links || '(chưa cấu hình facebook_group_links)') + '\\nPoster: ' + ($('[One] Precheck').first().json.post.poster_url || '(không có)') }}",
+              "type": "string"
+            },
+            {
+              "id": "0c2400df-989c-fc34-b373-53a02510ffd1",
+              "name": "alert",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "d934e207-8313-fe46-75b1-bef03f32a3a7",
+              "name": "alert_text",
+              "value": "={{ '📝 Cần ĐĂNG TAY Facebook Groups (' + $('[One] Precheck').first().json.post.post_key + ')\\nNhóm: ' + ($('[One] Precheck').first().json.config.facebook_group_links || '(chưa cấu hình)') + '\\nPoster: ' + ($('[One] Precheck').first().json.post.poster_url || '(không có)') + '\\n\\nNội dung:\\n' + $('[One] Precheck').first().json.text + '\\n\\nĐăng xong: đổi status dòng này trong tab Posts thành \"Manual - Confirmed\" (có thể dán link bài vào post_url).' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1160,
+        820
+      ],
+      "id": "af3bdd59-ae36-b040-b3ad-0436be42018e",
+      "name": "[One] Groups manual handoff",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "db11876e-04c5-424d-85e4-6653394e4fdf",
+              "name": "post_key",
+              "value": "={{ $('[One] Precheck').first().json.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "c5c269c8-376d-f711-50e9-f3c2c86bf352",
+              "name": "platform",
+              "value": "={{ $('[One] Precheck').first().json.post.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "05d6e8d5-fd51-ca1e-7705-a8c548e2ed7f",
+              "name": "status",
+              "value": "Published (manual)",
+              "type": "string"
+            },
+            {
+              "id": "192a5829-a270-ca8a-9241-ed7c776f438e",
+              "name": "platform_post_id",
+              "value": "={{ $('[One] Precheck').first().json.post.platform_post_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "0dd10360-ec99-b27f-eee3-76bde9008e3a",
+              "name": "post_url",
+              "value": "={{ $('[One] Precheck').first().json.post.post_url || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f8e1a1d9-6b2e-56d5-9b88-88bb85afafdd",
+              "name": "published_at",
+              "value": "={{ $('[One] Precheck').first().json.post.published_at || $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "e15fb748-adce-f885-527b-d9315eeb045f",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "390e93b6-fa08-8bbd-01f0-48afe7f633bc",
+              "name": "retry_count",
+              "value": "={{ Number($('[One] Precheck').first().json.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "affb531e-c8b4-85dc-42b9-223409ec00c5",
+              "name": "scheduled_at",
+              "value": "={{ $('[One] Precheck').first().json.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "3ec15b66-72e6-d271-d206-5b1d6019aa5b",
+              "name": "publish_log",
+              "value": "Người phụ trách xác nhận đã đăng tay",
+              "type": "string"
+            },
+            {
+              "id": "0fdf2cd5-bf8a-e096-fbf1-d916223a95a2",
+              "name": "alert",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "aa649b84-8046-7671-e97b-bd71127fee20",
+              "name": "alert_text",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1160,
+        960
+      ],
+      "id": "1d5df589-ce59-8cc0-4d59-16115e0a293b",
+      "name": "[One] Result · Manual confirmed",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a01b2a7c-a061-f50f-469c-725a35585cbb",
+              "name": "post_key",
+              "value": "={{ $('[One] Precheck').first().json.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "d356abae-33ac-080c-7143-364f84c8a6aa",
+              "name": "platform",
+              "value": "={{ $('[One] Precheck').first().json.post.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "a967ae08-4009-a522-1bc9-bb7ffa5bafa5",
+              "name": "status",
+              "value": "Published",
+              "type": "string"
+            },
+            {
+              "id": "9fa878ae-9897-5bce-53de-34bac064cc80",
+              "name": "platform_post_id",
+              "value": "={{ $('[One] Precheck').first().json.post.platform_post_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "0107b88d-eb67-974d-da52-c460bcb9143a",
+              "name": "post_url",
+              "value": "={{ $('[One] Precheck').first().json.post.post_url || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "7ba0763a-0b7f-b911-2f88-42f626f35c46",
+              "name": "published_at",
+              "value": "={{ $('[One] Precheck').first().json.post.published_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "8a25c8f6-22d7-8f07-59b0-ec69ba55df1b",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "3c97476c-ca30-3299-ad00-37f8d6d85cdc",
+              "name": "retry_count",
+              "value": "={{ Number($('[One] Precheck').first().json.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "5e423267-9b41-ad55-939c-1a62487f0a66",
+              "name": "scheduled_at",
+              "value": "={{ $('[One] Precheck').first().json.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "66702036-46a2-90f0-8f25-eef665522a0c",
+              "name": "publish_log",
+              "value": "Bỏ qua: dòng đã có platform_post_id (chống đăng trùng)",
+              "type": "string"
+            },
+            {
+              "id": "5a8848c1-af40-02b8-23d6-7438cf2fea8b",
+              "name": "alert",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "b3ceb57f-fbc3-4efa-81ba-244ac7cd2892",
+              "name": "alert_text",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1160,
+        1100
+      ],
+      "id": "b1d570dd-c2fc-b21b-9f7f-2e2ec0ccaa04",
+      "name": "[One] Result · Already posted",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "60a52233-22e3-3480-21dc-a11b79e557b1",
+              "name": "post_key",
+              "value": "={{ $('[One] Precheck').first().json.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "8072e11a-d184-fecb-3ae9-c634cc82e0e0",
+              "name": "platform",
+              "value": "={{ $('[One] Precheck').first().json.post.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "71ba8a0e-dd1a-f27e-e61c-eb7a995ab69e",
+              "name": "status",
+              "value": "Failed",
+              "type": "string"
+            },
+            {
+              "id": "270bd386-ba3d-36bd-09da-6a449fda16ca",
+              "name": "platform_post_id",
+              "value": "={{ $('[One] Precheck').first().json.post.platform_post_id || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "19ccfec5-4029-491a-449d-4d0973f504a4",
+              "name": "post_url",
+              "value": "={{ $('[One] Precheck').first().json.post.post_url || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "90c2ee21-fc74-cb8c-1f5a-5a8f57424674",
+              "name": "published_at",
+              "value": "={{ $('[One] Precheck').first().json.post.published_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f5c37c41-6b5d-bb42-01be-1c70cb70deb3",
+              "name": "error_message",
+              "value": "={{ $('[One] Precheck').first().json.reason }}",
+              "type": "string"
+            },
+            {
+              "id": "18e8d688-d573-950f-b807-3d78db7f2e8f",
+              "name": "retry_count",
+              "value": "={{ Number($('[One] Precheck').first().json.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "d6864fd7-a84d-ce36-2d2b-a251b6e04340",
+              "name": "scheduled_at",
+              "value": "={{ $('[One] Precheck').first().json.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "cc9ec3bd-b8e1-4244-5fb4-68a4cf306e73",
+              "name": "publish_log",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "aef2ab12-1ca7-4a27-4a47-d58b22a9a16d",
+              "name": "alert",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "a0d3a366-ed62-a925-44c9-e7f0366a9a23",
+              "name": "alert_text",
+              "value": "={{ '❌ Không đăng ' + $('[One] Precheck').first().json.post.platform + ' (' + $('[One] Precheck').first().json.post.post_key + '): ' + $('[One] Precheck').first().json.reason }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1160,
+        1240
+      ],
+      "id": "356614b7-8685-3440-52d6-fbcc1d6b24bb",
+      "name": "[One] Result · Invalid",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Phân loại lỗi để quyết định thử lại có backoff hay dừng hẳn; che token trong thông báo.\n  const { post, config } = $('[One] Precheck').first().json;\n  const raw = $input.first().json;\n  const err = raw.error ?? raw;\n  const msg = typeof err === 'string' ? err : (err.message || JSON.stringify(err));\n  const desc = typeof err === 'object' ? (err.description || '') : '';\n  const code = Number(err.httpCode || err.status || err.statusCode || (`${msg} ${desc}`.match(/\\b([45]\\d\\d)\\b/) || [])[1] || 0);\n  const sanitize = (s) => String(s)\n    .replace(/(access_token|token|key|secret|password|client_secret)=([^&\\s\"']+)/gi, '$1=***')\n    .replace(/Bearer\\s+[\\w.~+/-]+=*/gi, 'Bearer ***')\n    .slice(0, 500);\n  const reason = sanitize(desc ? `${msg} — ${desc}` : msg);\n  const authError = code === 401 || code === 403 || /credential|permission|oauth/i.test(msg);\n  const retryable = !authError && (code === 429 || code === 409 || code >= 500 || code === 0);\n  const retryCount = Number(post.retry_count || 0);\n  const max = Number(config.max_publish_retries ?? 2);\n  const base = { post_key: post.post_key, platform: post.platform, platform_post_id: '', post_url: '', published_at: '', publish_log: '' };\n  if (retryable && retryCount < max) {\n    const minutes = Number(config.retry_backoff_minutes || 15) * 2 ** retryCount;\n    return [{\n      json: {\n        ...base, status: 'Approved', retry_count: retryCount + 1,\n        scheduled_at: $now.setZone('Asia/Ho_Chi_Minh').plus({ minutes }).toFormat('yyyy-MM-dd HH:mm:ss'),\n        error_message: `Lỗi tạm thời (HTTP ${code || 'mạng'}), sẽ thử lại lần ${retryCount + 1}/${max} sau ${minutes} phút: ${reason}`,\n        alert: false, alert_text: '',\n      },\n    }];\n  }\n  const hint = authError\n    ? 'Token hết hạn hoặc thiếu quyền — kiểm tra credential và quyền của app. Không thử lại.'\n    : (retryable ? `Đã thử lại ${retryCount}/${max} lần.` : 'Lỗi dữ liệu/cấu hình — không thử lại.');\n  return [{\n    json: {\n      ...base, status: 'Failed', retry_count: retryCount, scheduled_at: post.scheduled_at || '',\n      error_message: `HTTP ${code || '?'}: ${reason}. ${hint}`,\n      alert: true, alert_text: `❌ Đăng ${post.platform} thất bại (${post.post_key}) — HTTP ${code || '?'}. ${hint}`,\n    },\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        800
+      ],
+      "id": "425c7bff-fc7c-2716-4956-8afbad1a39bf",
+      "name": "[One] Classify API error",
+      "notes": "Why Code: phân loại mã lỗi HTTP từ nhiều node khác nhau và tính lịch thử lại có backoff."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8e573fd6-591e-482e-5e13-3dc449607bc1",
+              "leftValue": "={{ $json.alert === true && $('[One] Precheck').first().json.config.notify_channel === 'telegram' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2960,
+        600
+      ],
+      "id": "0c0526f3-fa12-58b2-827a-65ccafd6a204",
+      "name": "[One] Alert needed?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('[One] Precheck').first().json.config.telegram_chat_id }}",
+        "text": "={{ $json.alert_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3180,
+        500
+      ],
+      "id": "c6d7f5e3-16c8-820f-7cbd-93f01708a477",
+      "name": "[One] Send alert",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Trả về kết quả chuẩn (bỏ output của Telegram nếu có).\n  return [{ json: $('[One] Alert needed?').first().json }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3400,
+        600
+      ],
+      "id": "6a206460-c7f0-220e-2dc0-871838909ec4",
+      "name": "[One] Return result",
+      "notes": "Why Code: khôi phục item kết quả sau nhánh gửi Telegram."
+    },
+    {
+      "parameters": {
+        "content": "## 05a · Publish one\n**Input:** `request = {post (1 dòng Posts + action), config}`. **Output:** `{post_key, status, platform_post_id, post_url, published_at, error_message, retry_count, scheduled_at, publish_log}`.\nKhông ghi Sheet (05-publish ghi). DRY_RUN → chỉ log. Facebook Groups → luôn đăng tay, không gọi API.\n**Lỗi thường gặp:** 401/403 token hết hạn/thiếu quyền → Failed + cảnh báo; 429/5xx → hẹn lại có backoff.",
+        "height": 220,
+        "width": 1200,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        100
+      ],
+      "id": "2c84e277-2e29-e45b-e4e4-1eb1fc271b09",
+      "name": "[One] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[One] When called": {
+      "main": [
+        [
+          {
+            "node": "[One] Precheck",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Precheck": {
+      "main": [
+        [
+          {
+            "node": "[One] Needs poster file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Needs poster file?": {
+      "main": [
+        [
+          {
+            "node": "[One] Download poster",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Route by platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Download poster": {
+      "main": [
+        [
+          {
+            "node": "[One] Route by platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Route by platform": {
+      "main": [
+        [
+          {
+            "node": "[One] Dry run log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] LinkedIn create post",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Threads image URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Facebook has image?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Groups manual handoff",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Result · Manual confirmed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Result · Already posted",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Result · Invalid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] LinkedIn create post": {
+      "main": [
+        [
+          {
+            "node": "[One] Result · LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Classify API error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Threads image URL": {
+      "main": [
+        [
+          {
+            "node": "[One] Share poster for Threads?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Share poster for Threads?": {
+      "main": [
+        [
+          {
+            "node": "[One] Share poster (Threads)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Threads create container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Share poster (Threads)": {
+      "main": [
+        [
+          {
+            "node": "[One] Threads create container",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Threads create container": {
+      "main": [
+        [
+          {
+            "node": "[One] Threads wait for processing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Classify API error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Threads wait for processing": {
+      "main": [
+        [
+          {
+            "node": "[One] Threads publish",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Threads publish": {
+      "main": [
+        [
+          {
+            "node": "[One] Threads get permalink",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Classify API error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Threads get permalink": {
+      "main": [
+        [
+          {
+            "node": "[One] Result · Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Facebook has image?": {
+      "main": [
+        [
+          {
+            "node": "[One] Facebook post photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Facebook post text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Facebook post photo": {
+      "main": [
+        [
+          {
+            "node": "[One] Result · Facebook Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Classify API error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Facebook post text": {
+      "main": [
+        [
+          {
+            "node": "[One] Result · Facebook Page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Classify API error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Dry run log": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Result · LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Result · Threads": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Result · Facebook Page": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Groups manual handoff": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Result · Manual confirmed": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Result · Already posted": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Result · Invalid": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Classify API error": {
+      "main": [
+        [
+          {
+            "node": "[One] Alert needed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Alert needed?": {
+      "main": [
+        [
+          {
+            "node": "[One] Send alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[One] Return result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[One] Send alert": {
+      "main": [
+        [
+          {
+            "node": "[One] Return result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "a0c13e0b-79a8-44f4-928c-b5b91358036c",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3PublishOne000",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

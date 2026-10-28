@@ -1,0 +1,5 @@
+# Script bash phải giữ LF kể cả khi clone trên Windows
+*.sh     text eol=lf
+Makefile text eol=lf
+*.json   text eol=lf
+*.yml    text eol=lf

@@ -1,0 +1,331 @@
+{
+  "updatedAt": "2026-10-28T04:48:49.713Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3ValidateSave0",
+  "name": "[dev] jd-04-validate-save",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        300
+      ],
+      "id": "9139ef87-7efb-ef44-0e95-053b2d8387e1",
+      "name": "[Validate] When called"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Kiểm tra 4 bài trong job.posts; chỉ đọc input (không tham chiếu node khác).\n  const job = $input.first().json.job;\n  const a = job.analysis || {};\n  const form = job.form;\n  const attempt = (job.validation?.attempt ?? -1) + 1;\n  const RULES = {\n    linkedin: { label: 'LinkedIn', maxChars: 3000, minTags: 3, maxTags: 5 },\n    threads: { label: 'Threads', maxChars: 500, minTags: 0, maxTags: 2 },\n    facebook_groups: { label: 'Facebook Groups', maxChars: 2000, minTags: 0, maxTags: 4 },\n    facebook_page: { label: 'Facebook Page', maxChars: 2500, minTags: 3, maxTags: 5 },\n  };\n  const notStated = (v) => /^\\s*(không nêu|khong neu)?\\s*$/i.test(v ?? '');\n  const normTag = (t) => '#' + String(t).replace(/^#+/, '').replace(/\\s+/g, '');\n  const sourceText = [form.jd_detail, form.salary, form.contact].join(' \\n ');\n  const sourceNumbers = new Set((sourceText.match(/\\d+(?:[.,]\\d+)?/g) || []).map((n) => n.replace(/[.,]/g, '')));\n  const contactRaw = notStated(a.thong_tin_lien_he) ? (form.contact || '') : a.thong_tin_lien_he;\n  const contactTokens = [\n    ...(contactRaw.match(/[\\w.+-]+@[\\w-]+\\.[\\w.]+/g) || []).map((s) => s.toLowerCase()),\n    ...(contactRaw.match(/(?:https?:\\/\\/|www\\.)\\S+/g) || []).map((s) => s.toLowerCase()),\n    ...(contactRaw.match(/\\+?\\d[\\d .-]{7,}\\d/g) || []).map((s) => s.replace(/\\D/g, '')),\n  ];\n  // Đơn vị tiền rõ ràng (đã bỏ \"k\" để tránh bắt nhầm \"5k follower\")\n  const MONEY = /(\\d+(?:[.,]\\d+)?)\\s*(?:-|–|đến|tới)?\\s*(?:\\d+(?:[.,]\\d+)?)?\\s*(triệu|tr\\b|củ|nghìn|ngàn|usd|\\$|vnđ|vnd|đồng)/gi;\n  // Chỉ bắt placeholder rõ ràng, không bắt \"[HN]\", \"[Tuyển gấp]\"\n  const PLACEHOLDER = /\\{\\{[^}]*\\}\\}|\\[(?:tên|ten|link|name|số điện thoại|sđt|sdt|email|công ty|cong ty|vị trí|vi tri|địa chỉ|dia chi|mức lương|muc luong)[^\\]\\n]{0,30}\\]|\\bX{3,}\\b|<(?:tên|link|name|email|số điện thoại)[^>\\n]{0,30}>/i;\n  const VI_CHARS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;\n  // \"lương ... <số>\" khi JD không nêu lương, nhưng bỏ qua \"lương tháng 13/14\"\n  const mentionsSalaryNumber = (t) => [...t.matchAll(/lương([^\\n\\d]{0,25})(\\d[\\d.,]*)/gi)].some((m) => !/tháng\\s*$/i.test(m[1]));\n\n  const errors = {};\n  const posts = {};\n  for (const [key, rule] of Object.entries(RULES)) {\n    const p = (job.posts || {})[key] || {};\n    const errs = [];\n    const text = String(p.post_text || '').trim();\n    const inText = new Set((text.match(/#[\\p{L}\\p{N}_]+/gu) || []).map((t) => t.toLowerCase()));\n    let tags = [...new Set((p.hashtags || []).map(normTag).filter((t) => t.length > 1))];\n    if (tags.length + inText.size < rule.minTags) tags = [...new Set([...tags, ...(a.tu_khoa_hashtag || []).map(normTag)])];\n    tags = tags.filter((t) => !inText.has(t.toLowerCase())).slice(0, Math.max(0, rule.maxTags - inText.size));\n    const full = tags.length ? `${text}\\n\\n${tags.join(' ')}` : text;\n\n    if (!text) errs.push('Bài rỗng');\n    if (full.length > rule.maxChars) errs.push(`Vượt giới hạn ${rule.maxChars} ký tự (hiện ${full.length})`);\n    const ph = full.match(PLACEHOLDER);\n    if (ph) errs.push(`Còn placeholder: \"${ph[0]}\"`);\n    if (contactTokens.length) {\n      const lower = full.toLowerCase();\n      const digits = full.replace(/\\D/g, '');\n      if (!contactTokens.some((t) => (/^\\d+$/.test(t) ? digits.includes(t) : lower.includes(t)))) errs.push(`Thiếu thông tin liên hệ có trong JD (${contactRaw})`);\n    }\n    for (const m of full.matchAll(MONEY)) {\n      const nums = (m[0].match(/\\d+(?:[.,]\\d+)?/g) || []).map((n) => n.replace(/[.,]/g, ''));\n      if (nums.some((n) => !sourceNumbers.has(n))) errs.push(`Có số tiền không có trong JD: \"${m[0].trim()}\"`);\n    }\n    if (notStated(a.muc_luong_chuan_hoa) && mentionsSalaryNumber(full)) errs.push('JD không nêu lương nhưng bài có con số lương');\n    const letters = (full.match(/\\p{L}/gu) || []).length;\n    if (letters && (full.match(VI_CHARS) || []).length / letters < 0.03) errs.push('Có vẻ không phải tiếng Việt có dấu');\n\n    if (errs.length) errors[key] = errs;\n    posts[key] = { post_text: text, hashtags: tags, cta: p.cta || '', full_text: full };\n  }\n  const error_summary = Object.entries(errors).map(([k, e]) => `${RULES[k].label}: ${e.join('; ')}`).join(' || ');\n  return [{ json: { job: { ...job, posts, validation: { valid: Object.keys(errors).length === 0, attempt, errors, error_summary } } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "ccb4c0b6-42f8-7c12-01c4-869550fc3e30",
+      "name": "[Validate] Check posts quality",
+      "notes": "Why Code: nhiều quy tắc regex (lương, liên hệ, placeholder, tỉ lệ dấu tiếng Việt) áp lên 4 bài cùng lúc."
+    },
+    {
+      "parameters": {
+        "jsCode": "  // 4 dòng tab Posts, khoá post_key = jd_id|platform để upsert (chạy lại không tạo dòng trùng).\n  const job = $input.first().json.job;\n  const LABELS = { linkedin: 'LinkedIn', threads: 'Threads', facebook_groups: 'Facebook Groups', facebook_page: 'Facebook Page' };\n  const createdAt = $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss');\n  return Object.entries(LABELS).map(([key, label]) => {\n    const p = job.posts[key];\n    const errs = job.validation.errors[key];\n    return {\n      json: {\n        post_key: `${job.jd_id}|${key}`,\n        jd_id: job.jd_id,\n        platform: label,\n        post_text: p.full_text,\n        hashtags: p.hashtags.join(' '),\n        poster_url: job.poster?.url || '',\n        poster_file_id: job.poster?.file_id || '',\n        status: errs ? 'Needs Review' : 'Draft',\n        error_message: errs ? errs.join('; ') : '',\n        created_at: createdAt,\n        retry_count: 0,\n      },\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        300
+      ],
+      "id": "af9eecef-8d78-a65b-3841-9942a98df358",
+      "name": "[Validate] Build post rows",
+      "notes": "Why Code: ánh xạ object 4 nền tảng thành 4 dòng có post_key."
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Validate] Check posts quality').first().json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "post_key": "={{ $json.post_key }}",
+            "jd_id": "={{ $json.jd_id }}",
+            "platform": "={{ $json.platform }}",
+            "post_text": "={{ $json.post_text }}",
+            "hashtags": "={{ $json.hashtags }}",
+            "poster_url": "={{ $json.poster_url }}",
+            "poster_file_id": "={{ $json.poster_file_id }}",
+            "status": "={{ $json.status }}",
+            "error_message": "={{ $json.error_message }}",
+            "created_at": "={{ $json.created_at }}",
+            "retry_count": "={{ $json.retry_count }}"
+          },
+          "matchingColumns": [
+            "post_key"
+          ],
+          "schema": [
+            {
+              "id": "post_key",
+              "displayName": "post_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "post_text",
+              "displayName": "post_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_file_id",
+              "displayName": "poster_file_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "retry_count",
+              "displayName": "retry_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        720,
+        300
+      ],
+      "id": "6c1b5690-c029-fdf9-2238-6506690f98a3",
+      "name": "[Validate] Upsert post rows",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "54025a86-180c-ebb6-06c3-47a07b723ff4",
+              "name": "job",
+              "value": "={{ $('[Validate] Check posts quality').first().json.job }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        960,
+        300
+      ],
+      "id": "d274cf48-ac77-9265-701f-b8880c6a25b8",
+      "name": "[Validate] Return job",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "content": "## 04 · Validate & save\n**Input:** `job.posts`, `job.poster`. **Output:** `job.validation = {valid, attempt, errors, error_summary}`.\nLUÔN lưu 4 bài (upsert theo `post_key`): bài đạt → `Draft`, bài lỗi → `Needs Review` + lý do ở `error_message`.\n**Lỗi thường gặp:** tab `Posts` thiếu cột `post_key`.",
+        "height": 220,
+        "width": 1160,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        40
+      ],
+      "id": "fa0d5822-2a02-e0df-ee71-3e1be8cd6b5a",
+      "name": "[Validate] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Validate] When called": {
+      "main": [
+        [
+          {
+            "node": "[Validate] Check posts quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Validate] Check posts quality": {
+      "main": [
+        [
+          {
+            "node": "[Validate] Build post rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Validate] Build post rows": {
+      "main": [
+        [
+          {
+            "node": "[Validate] Upsert post rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Validate] Upsert post rows": {
+      "main": [
+        [
+          {
+            "node": "[Validate] Return job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "e40eaa5f-88bb-4281-b245-bda3c938623d",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3ValidateSave0",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

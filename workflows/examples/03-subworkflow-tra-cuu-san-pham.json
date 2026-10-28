@@ -1,0 +1,56 @@
+{
+  "id": "exSubTraCuuSP001",
+  "name": "[dev] sub-tra-cuu-san-pham",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            { "name": "query", "type": "string" }
+          ]
+        }
+      },
+      "id": "3c3c3c3c-0000-4000-8000-000000000001",
+      "name": "When Called By Agent",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dữ liệu giả lập — thay bằng Postgres / Google Sheets / API thật\nconst catalog = [\n  { sku: 'SP001', ten: 'Cà phê rang xay Arabica 500g', gia: 185000, tonKho: 42 },\n  { sku: 'SP002', ten: 'Trà ô long Bảo Lộc 200g', gia: 120000, tonKho: 0 },\n  { sku: 'SP003', ten: 'Mật ong rừng U Minh 1L', gia: 350000, tonKho: 15 },\n  { sku: 'SP004', ten: 'Hạt điều rang muối Bình Phước 500g', gia: 210000, tonKho: 8 }\n];\n\nconst norm = s => (s || '').toString().toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/đ/g, 'd');\nconst words = s => norm(s).split(/[^a-z0-9]+/).filter(Boolean);\nconst q = words($input.first().json.query);\n// Ưu tiên sản phẩm chứa ĐỦ các từ trong query (so khớp nguyên từ), nếu không có thì chứa ít nhất 1 từ\nconst score = p => { const t = words(p.ten + ' ' + p.sku); return q.filter(w => t.includes(w)).length; };\nconst all = catalog.filter(p => score(p) === q.length && q.length > 0);\nconst found = all.length ? all : catalog.filter(p => score(p) > 0);\n\nreturn [{\n  json: {\n    query: $input.first().json.query,\n    count: found.length,\n    results: found.map(p => ({ ...p, trangThai: p.tonKho > 0 ? 'còn hàng' : 'hết hàng' }))\n  }\n}];"
+      },
+      "id": "3c3c3c3c-0000-4000-8000-000000000002",
+      "name": "Search Catalog",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "content": "## Sub-workflow tra cứu sản phẩm\nĐược AI Agent (`[dev] ai-agent-basic`) gọi qua **Workflow Tool**.\n- **When Called By Agent**: nhận input `query`.\n- **Search Catalog**: tìm trong danh mục giả lập (không dấu), trả về giá + tồn kho.",
+        "height": 200,
+        "width": 420
+      },
+      "id": "3c3c3c3c-0000-4000-8000-000000000003",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -240]
+    }
+  ],
+  "connections": {
+    "When Called By Agent": {
+      "main": [[{ "node": "Search Catalog", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "exErrorHandler01",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "tags": []
+}

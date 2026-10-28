@@ -1,0 +1,277 @@
+{
+  "updatedAt": "2026-10-28T04:48:41.956Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3WritePosts000",
+  "name": "[dev] jd-02-write-posts",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        300
+      ],
+      "id": "f570b54a-22bd-5ba9-a02a-a605f53dd54a",
+      "name": "[Write] When called"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Tạo 1 item cho mỗi nền tảng cần viết (4 bài) hoặc chỉ các bài lỗi khi job.validation báo không hợp lệ.\n  const job = $input.first().json.job;\n  const P = {\"linkedin\":{\"label\":\"LinkedIn\",\"system\":\"# VAI TRÒ\\nBạn là copywriter tuyển dụng chuyên viết bài LinkedIn cho thị trường Việt Nam.\\n\\n# YÊU CẦU BÀI LINKEDIN\\n- Giọng chuyên nghiệp, tôn trọng, tập trung giá trị nghề nghiệp và lộ trình phát triển.\\n- 1-2 dòng đầu là HOOK mạnh (câu hỏi hoặc nhận định), không mở đầu bằng \\\"Chúng tôi đang tuyển\\\".\\n- Cấu trúc: Hook → giới thiệu ngắn vị trí/công ty → \\\"Bạn sẽ làm gì\\\" (gạch đầu dòng) → \\\"Yêu cầu\\\" (gạch đầu dòng) → \\\"Quyền lợi\\\" (gạch đầu dòng) → lương (nếu có) → cách ứng tuyển.\\n- Gạch đầu dòng dùng \\\"•\\\" hoặc \\\"–\\\". Emoji rất hạn chế (tối đa 2).\\n- Tổng độ dài `post_text` TỐI ĐA 3000 ký tự (khuyến nghị 1200-2200).\\n- `hashtags`: 3-5 hashtag chuyên nghiệp.\\n\\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\\n- Chỉ dùng dữ liệu trong \\\"Dữ liệu JD đã phân tích\\\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\\n- Nếu `muc_luong_chuan_hoa` là \\\"Không nêu\\\": KHÔNG nhắc con số lương nào; có thể ghi \\\"Lương: Thỏa thuận/trao đổi khi phỏng vấn\\\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\\n- Nếu `thong_tin_lien_he` khác \\\"Không nêu\\\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \\\"Không nêu\\\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \\\"XXX\\\".\\n- Hashtag trong `hashtags` bắt đầu bằng \\\"#\\\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\\n- Nếu có \\\"Ghi chú sửa lỗi\\\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng.\"},\"threads\":{\"label\":\"Threads\",\"system\":\"# VAI TRÒ\\nBạn viết bài Threads tuyển dụng — ngắn, gần gũi, như một người đang kể chuyện với bạn bè.\\n\\n# YÊU CẦU BÀI THREADS\\n- `post_text` TỐI ĐA 500 ký tự (tính cả xuống dòng). Khuyến nghị 250-450.\\n- Giọng thân mật, câu ngắn, có thể dùng 1-2 emoji. Không dùng gạch đầu dòng dài; tối đa 3 ý nổi bật.\\n- Mở đầu bằng 1 câu bắt trend/đặt vấn đề, KHÁC hẳn hook của LinkedIn.\\n- Phải có: vị trí, tên công ty, lương (chỉ khi có), cách liên hệ.\\n- `hashtags`: 0-2 hashtag.\\n\\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\\n- Chỉ dùng dữ liệu trong \\\"Dữ liệu JD đã phân tích\\\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\\n- Nếu `muc_luong_chuan_hoa` là \\\"Không nêu\\\": KHÔNG nhắc con số lương nào; có thể ghi \\\"Lương: Thỏa thuận/trao đổi khi phỏng vấn\\\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\\n- Nếu `thong_tin_lien_he` khác \\\"Không nêu\\\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \\\"Không nêu\\\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \\\"XXX\\\".\\n- Hashtag trong `hashtags` bắt đầu bằng \\\"#\\\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\\n- Nếu có \\\"Ghi chú sửa lỗi\\\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng.\"},\"facebook_groups\":{\"label\":\"Facebook Groups\",\"system\":\"# VAI TRÒ\\nBạn là thành viên tích cực trong các group việc làm trên Facebook, viết bài tuyển dụng hợp \\\"luật group\\\".\\n\\n# YÊU CẦU BÀI FACEBOOK GROUPS\\n- Giọng cộng đồng, chân thành, dễ đọc trên điện thoại; mỗi đoạn 1-3 dòng.\\n- Dòng đầu là tiêu đề viết HOA gồm chữ \\\"TUYỂN\\\", tên vị trí, tên công ty và địa điểm (nếu JD có), ví dụ: \\\"🔥 HÀ NỘI – TUYỂN KẾ TOÁN TỔNG HỢP – CÔNG TY ABC\\\". Không dùng ngoặc vuông.\\n- Emoji vừa phải (4-8 emoji, làm icon đầu dòng như 📍 💰 ✅ 📩).\\n- Liệt kê ngắn: địa điểm, hình thức, lương (chỉ khi có), yêu cầu chính, quyền lợi chính.\\n- Kết bài nhắc ứng viên liên hệ QUA ĐÚNG KÊNH trong JD (`thong_tin_lien_he`); nếu \\\"Không nêu\\\" thì mời \\\"để lại bình luận/inbox\\\".\\n- KHÔNG giống bài Facebook Page: không dùng giọng thương hiệu \\\"Chúng tôi tự hào...\\\", không CTA kiểu quảng cáo.\\n- Tối đa khoảng 1500 ký tự. `hashtags`: 2-4 hashtag.\\n\\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\\n- Chỉ dùng dữ liệu trong \\\"Dữ liệu JD đã phân tích\\\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\\n- Nếu `muc_luong_chuan_hoa` là \\\"Không nêu\\\": KHÔNG nhắc con số lương nào; có thể ghi \\\"Lương: Thỏa thuận/trao đổi khi phỏng vấn\\\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\\n- Nếu `thong_tin_lien_he` khác \\\"Không nêu\\\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \\\"Không nêu\\\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \\\"XXX\\\".\\n- Hashtag trong `hashtags` bắt đầu bằng \\\"#\\\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\\n- Nếu có \\\"Ghi chú sửa lỗi\\\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng.\"},\"facebook_page\":{\"label\":\"Facebook Page\",\"system\":\"# VAI TRÒ\\nBạn là người quản lý fanpage thương hiệu tuyển dụng (Employer Branding) của công ty.\\n\\n# YÊU CẦU BÀI FACEBOOK PAGE\\n- Giọng thương hiệu: tự tin, ấm áp, thể hiện văn hóa và giá trị công ty (chỉ dựa trên dữ liệu JD, không bịa văn hóa/giải thưởng).\\n- Cấu trúc: câu mở đầu truyền cảm hứng → vì sao vị trí này đáng giá (dựa `diem_hap_dan`) → bạn là người phù hợp nếu... → quyền lợi → lương (chỉ khi có) → CTA rõ ràng.\\n- CTA rõ, có động từ mạnh (\\\"Gửi CV ngay hôm nay qua ...\\\", \\\"Nhắn tin cho Page để ...\\\") và dùng đúng kênh liên hệ trong JD.\\n- Emoji 2-5, tinh tế. Tối đa khoảng 2000 ký tự.\\n- Phải khác bài Facebook Groups về cấu trúc và giọng điệu.\\n- `hashtags`: 3-5 hashtag (có thể gồm hashtag tên công ty viết liền không dấu).\\n\\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\\n- Chỉ dùng dữ liệu trong \\\"Dữ liệu JD đã phân tích\\\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\\n- Nếu `muc_luong_chuan_hoa` là \\\"Không nêu\\\": KHÔNG nhắc con số lương nào; có thể ghi \\\"Lương: Thỏa thuận/trao đổi khi phỏng vấn\\\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\\n- Nếu `thong_tin_lien_he` khác \\\"Không nêu\\\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \\\"Không nêu\\\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \\\"XXX\\\".\\n- Hashtag trong `hashtags` bắt đầu bằng \\\"#\\\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\\n- Nếu có \\\"Ghi chú sửa lỗi\\\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng.\"}};\n  const REWRITE = \"# VAI TRÒ\\nBạn là biên tập viên kiểm duyệt bài đăng tuyển dụng. Bạn nhận MỘT bài đăng bị hệ thống kiểm tra chất lượng đánh trượt, kèm danh sách lỗi cụ thể và quy tắc của nền tảng. Hãy viết lại bài đó để hết lỗi.\\n\\n# NGUYÊN TẮC\\n- Sửa ĐÚNG các lỗi được liệt kê; giữ giọng điệu, cấu trúc đặc trưng của nền tảng.\\n- Tuân thủ giới hạn ký tự của nền tảng (LinkedIn ≤ 3000, Threads ≤ 500, Facebook Groups ≤ 1500, Facebook Page ≤ 2000).\\n- Chỉ dùng dữ liệu JD đã phân tích. Không bịa lương, liên hệ, quyền lợi. Nếu lỗi là \\\"số lương không có trong JD\\\" → xóa con số đó.\\n- Nếu JD có thông tin liên hệ → bài phải chứa nguyên văn thông tin đó.\\n- Không để placeholder ({{...}}, [Tên], [Link], XXX). Tiếng Việt có dấu.\";\n  const v = job.validation;\n  const rewrite = !!(v && !v.valid);\n  const keys = rewrite ? Object.keys(v.errors) : Object.keys(P);\n  const analysis = JSON.stringify(job.analysis);\n  return keys.map((k) => {\n    const lines = [\n      `Hãy viết bài đăng tuyển dụng cho nền tảng ${P[k].label}.`,\n      `Tên công ty: ${job.form.company}`,\n      `Dữ liệu JD đã phân tích (JSON): ${analysis}`,\n    ];\n    if (rewrite) {\n      lines.push('', 'Ghi chú sửa lỗi:', ...v.errors[k].map((e) => `- ${e}`), '', 'Bài cần viết lại:', job.posts[k].full_text || job.posts[k].post_text);\n    }\n    return { json: { platform: k, system_prompt: rewrite ? `${P[k].system}\\n\\n${REWRITE}` : P[k].system, user_prompt: lines.join('\\n') } };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "id": "561b877a-4772-a099-a9b6-a243a7cb5ebc",
+      "name": "[Write] Build platform tasks",
+      "notes": "Why Code: số item thay đổi theo chế độ viết mới/viết lại và mỗi item mang system prompt riêng của nền tảng."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.user_prompt }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "={{ $json.system_prompt }}"
+            }
+          ]
+        },
+        "batching": {
+          "batchSize": 4,
+          "delayBetweenBatches": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        500,
+        300
+      ],
+      "id": "4e5920da-7e88-666f-4d9b-ffc2e7398f65",
+      "name": "[Write] Generate post",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        380,
+        520
+      ],
+      "id": "b5459c82-6a5b-f692-3e02-6a82ee8d1cfd",
+      "name": "[Write] Model · Claude Sonnet",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_text\": { \"type\": \"string\", \"description\": \"Nội dung bài đăng, không gồm hashtag\" },\n    \"hashtags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"cta\": { \"type\": \"string\" }\n  },\n  \"required\": [\"post_text\", \"hashtags\", \"cta\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        600,
+        520
+      ],
+      "id": "a55662e5-11ae-1606-e9d3-bb134fb633a7",
+      "name": "[Write] Parser · Platform post"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-5-5"
+        },
+        "options": {
+          "temperature": 0,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        600,
+        720
+      ],
+      "id": "37f0058b-d953-4dba-2611-35de0f366c87",
+      "name": "[Write] Model · Fix JSON (Haiku)",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Ghép kết quả theo thứ tự item với danh sách task, giữ nguyên các bài không cần viết lại.\n  const job = $('[Write] When called').first().json.job;\n  const tasks = $('[Write] Build platform tasks').all();\n  const posts = { ...(job.posts || {}) };\n  $input.all().forEach((item, i) => {\n    posts[tasks[i].json.platform] = item.json.output;\n  });\n  return [{ json: { job: { ...job, posts } } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        300
+      ],
+      "id": "b614b0ba-ab6f-4e8e-ac3c-987245c5574b",
+      "name": "[Write] Return job",
+      "notes": "Why Code: ghép N kết quả LLM với N task theo chỉ số item."
+    },
+    {
+      "parameters": {
+        "content": "## 02 · Write posts\n**Input:** `job.analysis` (+ `job.validation`, `job.posts` khi viết lại). **Output:** `job.posts.{linkedin,threads,facebook_groups,facebook_page}`.\n4 bài chạy song song (Batch Size 4). Viết lại chỉ các bài có trong `job.validation.errors`.\n**Lỗi thường gặp:** JSON hỏng → parser tự sửa bằng Haiku; 429 từ Anthropic → giảm Batch Size.",
+        "height": 220,
+        "width": 1000,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        40
+      ],
+      "id": "0618ed93-6681-0476-4220-3c28ef320158",
+      "name": "[Write] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Write] Model · Claude Sonnet": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[Write] Generate post",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Write] Parser · Platform post": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "[Write] Generate post",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Write] Model · Fix JSON (Haiku)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[Write] Parser · Platform post",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Write] When called": {
+      "main": [
+        [
+          {
+            "node": "[Write] Build platform tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Write] Build platform tasks": {
+      "main": [
+        [
+          {
+            "node": "[Write] Generate post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Write] Generate post": {
+      "main": [
+        [
+          {
+            "node": "[Write] Return job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "9c4a4e4e-df7e-4073-af90-dcb9d15573af",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3WritePosts000",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

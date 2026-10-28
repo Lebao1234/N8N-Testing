@@ -1,0 +1,2804 @@
+{
+  "id": "jdAutoPostV20001",
+  "name": "[dev] jd-tuyen-dung-da-nen-tang",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Thông Tin JD Công Việc",
+        "formDescription": "Vui lòng điền đầy đủ thông tin tuyển dụng bên dưới để hệ thống tiếp nhận và xử lý.\n\n• Tên Công Ty: tên đầy đủ của doanh nghiệp tuyển dụng\n• Vị Trí: chức danh cần tuyển (ví dụ: Nhân viên Marketing)\n• Chi Tiết JD: mô tả công việc, yêu cầu ứng viên, quyền lợi\n• Mức Lương: ghi khoảng cụ thể (ví dụ: 15-25 triệu) hoặc \"Thỏa thuận\"\n• Liên Hệ: số điện thoại hoặc email nhận hồ sơ\n\nCác trường có dấu * là bắt buộc. Thông tin của bạn sẽ được bảo mật và chỉ dùng cho mục đích tuyển dụng.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Tên Công Ty",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Vị Trí",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Chi Tiết JD",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Mức Lương"
+            },
+            {
+              "fieldLabel": "Liên Hệ",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        300
+      ],
+      "id": "75f02a7a-0451-b840-2fb7-75d8da2d6cca",
+      "name": "JD Input Form",
+      "webhookId": "311aa243-8d44-9412-f6e6-e44a8c4ce63b",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "CLtFsk0dNV90Z52V",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "786431b8-a66c-bb52-1ad7-a72ae3cfc6a4",
+              "name": "spreadsheet_id",
+              "value": "REPLACE_WITH_SPREADSHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "9b2e4575-d677-b9a7-c870-277be35722d2",
+              "name": "drive_folder_id",
+              "value": "REPLACE_WITH_DRIVE_FOLDER_ID",
+              "type": "string"
+            },
+            {
+              "id": "b21fa2c0-de38-d722-7c63-51c1bd252efa",
+              "name": "logo_path",
+              "value": "/files/jd-automation/logo.png",
+              "type": "string"
+            },
+            {
+              "id": "9f08da73-f996-2e74-632b-2f7137babbf8",
+              "name": "enable_text_overlay",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "4d2467fe-0187-6563-102a-34a557123e24",
+              "name": "image_model",
+              "value": "gpt-image-1",
+              "type": "string"
+            },
+            {
+              "id": "1cee8744-f39a-8023-61cd-803e45557852",
+              "name": "overlay_font",
+              "value": "/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "id": "fa535ffb-25e1-fd20-3416-52f9be21e06e",
+      "name": "Config"
+    },
+    {
+      "parameters": {
+        "action": "generate",
+        "dataPropertyName": "jd_id",
+        "encodingType": "uuid"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "id": "5becc844-b910-bda0-a561-666570461e08",
+      "name": "Generate JD ID"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.jd_id }}",
+            "created_at": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "company": "={{ $json['Tên Công Ty'] }}",
+            "position": "={{ $json['Vị Trí'] }}",
+            "jd_detail": "={{ $json['Chi Tiết JD'] }}",
+            "salary": "={{ $json['Mức Lương'] }}",
+            "contact": "={{ $json['Liên Hệ'] }}",
+            "status": "New",
+            "error_message": "",
+            "poster_url": "",
+            "warnings": "",
+            "execution_id": "=exec-{{ $execution.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jd_detail",
+              "displayName": "jd_detail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        660,
+        300
+      ],
+      "id": "f9e61c8e-7b49-9278-7921-6a16e1e6e617",
+      "name": "Add JD Row",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $('Generate JD ID').first().json.jd_id }}",
+            "status": "Processing"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jd_detail",
+              "displayName": "jd_detail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        300
+      ],
+      "id": "32b8cd83-675b-35d8-6ce7-34f7649ca8f1",
+      "name": "Set Processing",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        900
+      ],
+      "id": "561cdd56-bc4c-50b6-9616-3e35353d6be0",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1b5bc5a5-86f7-b21e-b47a-0a9bdb92aa71",
+              "name": "spreadsheet_id",
+              "value": "REPLACE_WITH_SPREADSHEET_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        900
+      ],
+      "id": "5cbc6bf7-7178-8070-09b5-964f31588c97",
+      "name": "Error Config"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Error Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "Processing"
+            },
+            {
+              "lookupColumn": "execution_id",
+              "lookupValue": "=exec-{{ $('Error Trigger').first().json.execution.id }}"
+            }
+          ]
+        },
+        "combineFilters": "AND",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        440,
+        900
+      ],
+      "id": "215850b0-c403-d309-cb81-94035d1ec15e",
+      "name": "Find Processing JD",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Error Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.jd_id }}",
+            "status": "Error",
+            "error_message": "={{ $('Error Trigger').first().json.execution.error?.message ?? 'Lỗi không xác định' }} | Node lỗi: {{ $('Error Trigger').first().json.execution.lastNodeExecuted ?? 'không rõ' }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jd_detail",
+              "displayName": "jd_detail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        660,
+        900
+      ],
+      "id": "634ea5d7-bf84-8225-6f8f-8089c60e7b3b",
+      "name": "Set Error",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tên Công Ty: {{ $('Generate JD ID').first().json['Tên Công Ty'] }}\nVị Trí: {{ $('Generate JD ID').first().json['Vị Trí'] }}\nMức Lương (form): {{ $('Generate JD ID').first().json['Mức Lương'] || '(để trống)' }}\nLiên Hệ (form): {{ $('Generate JD ID').first().json['Liên Hệ'] || '(để trống)' }}\nChi Tiết JD:\n{{ $('Generate JD ID').first().json['Chi Tiết JD'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "# VAI TRÒ\nBạn là chuyên viên tuyển dụng (Talent Acquisition) giàu kinh nghiệm tại Việt Nam. Nhiệm vụ: đọc JD do người dùng nhập và chuẩn hóa thành dữ liệu có cấu trúc để các bước sau viết bài đăng và thiết kế poster.\n\n# QUY TẮC CỨNG (vi phạm = sai)\n1. CHỈ dùng thông tin có trong dữ liệu được cung cấp (Tên công ty, Vị trí, Chi tiết JD, Mức lương, Liên hệ). TUYỆT ĐỐI KHÔNG bịa, không suy đoán, không \"làm đẹp\" số liệu.\n2. Không tự tạo mức lương, địa chỉ, quyền lợi, số năm kinh nghiệm, quy mô công ty, thương hiệu, link, email, số điện thoại.\n3. Trường dạng chuỗi nào không có thông tin → ghi đúng chuỗi \"Không nêu\". Trường dạng mảng không có thông tin → mảng rỗng.\n4. Mỗi trường quan trọng bị thiếu (lương, địa điểm, hình thức làm việc, kinh nghiệm, quyền lợi, liên hệ) → thêm 1 câu cảnh báo ngắn vào `canh_bao_thieu_thong_tin`, ví dụ: \"JD không nêu mức lương\".\n5. Mức lương: ưu tiên trường \"Mức Lương\" của form; nếu trống thì lấy từ Chi tiết JD; nếu cả hai đều không có → \"Không nêu\". Chuẩn hóa dạng \"15 - 25 triệu VNĐ/tháng\", \"Thỏa thuận\", \"Upto 2.000 USD\". Không quy đổi tiền tệ, không làm tròn.\n6. `thong_tin_lien_he`: chép nguyên văn kênh liên hệ (SĐT/email/link/Zalo) từ trường Liên Hệ hoặc JD. Không có → \"Không nêu\".\n7. Toàn bộ nội dung viết bằng tiếng Việt CÓ DẤU (trừ thuật ngữ chuyên môn/tên riêng).\n\n# HƯỚNG DẪN TỪNG TRƯỜNG\n- `job_title_chuan`: chức danh chuẩn, ngắn gọn (ví dụ \"Kỹ sư Backend (Java)\"), không kèm lương/địa điểm.\n- `nganh_nghe`: một nhóm ngành ngắn, chọn gần nhất trong: \"Công nghệ thông tin\", \"F&B\", \"Tài chính - Ngân hàng\", \"Bán lẻ\", \"Sản xuất\", \"Giáo dục\", \"Y tế\", \"Marketing - Truyền thông\", \"Logistics\", \"Bất động sản\", \"Khác\".\n- `cap_bac`: Thực tập sinh / Nhân viên / Chuyên viên / Trưởng nhóm / Quản lý / Giám đốc / \"Không nêu\".\n- `dia_diem`, `hinh_thuc_lam_viec` (Toàn thời gian / Bán thời gian / Remote / Hybrid / ...), `kinh_nghiem_yeu_cau`: lấy từ JD.\n- `ky_nang_chinh`: 3-8 kỹ năng quan trọng nhất có trong JD.\n- `quyen_loi_noi_bat`: tối đa 6 quyền lợi có trong JD, viết ngắn.\n- `diem_hap_dan`: ĐÚNG tối đa 3 ý hấp dẫn nhất (mỗi ý ≤ 60 ký tự), rút từ JD; nếu JD nghèo thông tin có thể ít hơn 3, không bịa.\n- `doi_tuong_ung_vien`: 1 câu mô tả ứng viên phù hợp.\n- `tu_khoa_hashtag`: 5-8 từ khóa dạng hashtag tiếng Việt không dấu hoặc tiếng Anh, bắt đầu bằng \"#\", không khoảng trắng (ví dụ \"#TuyenDung\", \"#Java\").\n- `giong_van_de_xuat`: 1 câu gợi ý giọng văn phù hợp ngành và cấp bậc.\n- `canh_bao_thieu_thong_tin`: danh sách cảnh báo (rỗng nếu đủ thông tin).\n\nTrả về đúng một đối tượng JSON theo schema được yêu cầu, không thêm lời giải thích.",
+          "maxIterations": 3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1180,
+        300
+      ],
+      "id": "378a516b-7b83-0629-6029-93c83cabdc42",
+      "name": "JD Analyzer",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.2,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1100,
+        520
+      ],
+      "id": "14367cdc-d475-2e00-08a6-0db7100672ed",
+      "name": "Claude Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"job_title_chuan\": { \"type\": \"string\" },\n    \"nganh_nghe\": { \"type\": \"string\" },\n    \"cap_bac\": { \"type\": \"string\" },\n    \"dia_diem\": { \"type\": \"string\" },\n    \"hinh_thuc_lam_viec\": { \"type\": \"string\" },\n    \"muc_luong_chuan_hoa\": { \"type\": \"string\", \"description\": \"\\\"Không nêu\\\" nếu JD không có lương\" },\n    \"kinh_nghiem_yeu_cau\": { \"type\": \"string\" },\n    \"ky_nang_chinh\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"quyen_loi_noi_bat\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"diem_hap_dan\": { \"type\": \"array\", \"items\": { \"type\": \"string\" }, \"maxItems\": 3 },\n    \"doi_tuong_ung_vien\": { \"type\": \"string\" },\n    \"tu_khoa_hashtag\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"giong_van_de_xuat\": { \"type\": \"string\" },\n    \"thong_tin_lien_he\": { \"type\": \"string\", \"description\": \"\\\"Không nêu\\\" nếu không có\" },\n    \"canh_bao_thieu_thong_tin\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } }\n  },\n  \"required\": [\n    \"job_title_chuan\", \"nganh_nghe\", \"cap_bac\", \"dia_diem\", \"hinh_thuc_lam_viec\",\n    \"muc_luong_chuan_hoa\", \"kinh_nghiem_yeu_cau\", \"ky_nang_chinh\", \"quyen_loi_noi_bat\",\n    \"diem_hap_dan\", \"doi_tuong_ung_vien\", \"tu_khoa_hashtag\", \"giong_van_de_xuat\",\n    \"thong_tin_lien_he\", \"canh_bao_thieu_thong_tin\"\n  ],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1320,
+        520
+      ],
+      "id": "4b22f75b-dbd1-c27f-092e-e43bd5bc0a72",
+      "name": "JD Analysis Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Hãy viết bài đăng tuyển dụng cho nền tảng LinkedIn.\n\nTên công ty: {{ $('Generate JD ID').first().json['Tên Công Ty'] }}\nDữ liệu JD đã phân tích (JSON):\n{{ JSON.stringify($('JD Analyzer').first().json.output, null, 2) }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# VAI TRÒ\nBạn là copywriter tuyển dụng chuyên viết bài LinkedIn cho thị trường Việt Nam.\n\n# YÊU CẦU BÀI LINKEDIN\n- Giọng chuyên nghiệp, tôn trọng, tập trung giá trị nghề nghiệp và lộ trình phát triển.\n- 1-2 dòng đầu là HOOK mạnh (câu hỏi hoặc nhận định), không mở đầu bằng \"Chúng tôi đang tuyển\".\n- Cấu trúc: Hook → giới thiệu ngắn vị trí/công ty → \"Bạn sẽ làm gì\" (gạch đầu dòng) → \"Yêu cầu\" (gạch đầu dòng) → \"Quyền lợi\" (gạch đầu dòng) → lương (nếu có) → cách ứng tuyển.\n- Gạch đầu dòng dùng \"•\" hoặc \"–\". Emoji rất hạn chế (tối đa 2).\n- Tổng độ dài `post_text` TỐI ĐA 3000 ký tự (khuyến nghị 1200-2200).\n- `hashtags`: 3-5 hashtag chuyên nghiệp.\n\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\n- Chỉ dùng dữ liệu trong \"Dữ liệu JD đã phân tích\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\n- Nếu `muc_luong_chuan_hoa` là \"Không nêu\": KHÔNG nhắc con số lương nào; có thể ghi \"Lương: Thỏa thuận/trao đổi khi phỏng vấn\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\n- Nếu `thong_tin_lien_he` khác \"Không nêu\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \"Không nêu\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \"XXX\".\n- Hashtag trong `hashtags` bắt đầu bằng \"#\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\n- Nếu có \"Ghi chú sửa lỗi\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1560,
+        300
+      ],
+      "id": "936b55cd-3f02-85d5-f510-e97a84118618",
+      "name": "LinkedIn Writer",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.6,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1480,
+        520
+      ],
+      "id": "62eb4413-9c8f-9803-c7ba-1e34df5c867b",
+      "name": "LinkedIn Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_text\": { \"type\": \"string\", \"description\": \"Nội dung bài đăng, không gồm hashtag\" },\n    \"hashtags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"cta\": { \"type\": \"string\" }\n  },\n  \"required\": [\"post_text\", \"hashtags\", \"cta\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1700,
+        520
+      ],
+      "id": "5593fc8e-ce30-0c2a-0b83-504a2a9c353a",
+      "name": "LinkedIn Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Hãy viết bài đăng tuyển dụng cho nền tảng Threads.\n\nTên công ty: {{ $('Generate JD ID').first().json['Tên Công Ty'] }}\nDữ liệu JD đã phân tích (JSON):\n{{ JSON.stringify($('JD Analyzer').first().json.output, null, 2) }}\n\nCác bài đã viết cho nền tảng khác (KHÔNG lặp lại câu mở đầu, cấu trúc hay câu chữ):\n--- LinkedIn ---\n{{ $('LinkedIn Writer').first().json.output.post_text.slice(0, 400) }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# VAI TRÒ\nBạn viết bài Threads tuyển dụng — ngắn, gần gũi, như một người đang kể chuyện với bạn bè.\n\n# YÊU CẦU BÀI THREADS\n- `post_text` TỐI ĐA 500 ký tự (tính cả xuống dòng). Khuyến nghị 250-450.\n- Giọng thân mật, câu ngắn, có thể dùng 1-2 emoji. Không dùng gạch đầu dòng dài; tối đa 3 ý nổi bật.\n- Mở đầu bằng 1 câu bắt trend/đặt vấn đề, KHÁC hẳn hook của LinkedIn.\n- Phải có: vị trí, tên công ty, lương (chỉ khi có), cách liên hệ.\n- `hashtags`: 0-2 hashtag.\n\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\n- Chỉ dùng dữ liệu trong \"Dữ liệu JD đã phân tích\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\n- Nếu `muc_luong_chuan_hoa` là \"Không nêu\": KHÔNG nhắc con số lương nào; có thể ghi \"Lương: Thỏa thuận/trao đổi khi phỏng vấn\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\n- Nếu `thong_tin_lien_he` khác \"Không nêu\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \"Không nêu\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \"XXX\".\n- Hashtag trong `hashtags` bắt đầu bằng \"#\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\n- Nếu có \"Ghi chú sửa lỗi\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1980,
+        300
+      ],
+      "id": "aa6aae90-6ca2-a56f-617f-28d631e9c776",
+      "name": "Threads Writer",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.8,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        1900,
+        520
+      ],
+      "id": "af8de54e-94eb-0c05-5b03-dc06e61eaf30",
+      "name": "Threads Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_text\": { \"type\": \"string\", \"description\": \"Nội dung bài đăng, không gồm hashtag\" },\n    \"hashtags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"cta\": { \"type\": \"string\" }\n  },\n  \"required\": [\"post_text\", \"hashtags\", \"cta\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2120,
+        520
+      ],
+      "id": "b54918e4-8162-1f39-5f84-5a6b46ad98d5",
+      "name": "Threads Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Hãy viết bài đăng tuyển dụng cho nền tảng Facebook Groups.\n\nTên công ty: {{ $('Generate JD ID').first().json['Tên Công Ty'] }}\nDữ liệu JD đã phân tích (JSON):\n{{ JSON.stringify($('JD Analyzer').first().json.output, null, 2) }}\n\nCác bài đã viết cho nền tảng khác (KHÔNG lặp lại câu mở đầu, cấu trúc hay câu chữ):\n--- LinkedIn ---\n{{ $('LinkedIn Writer').first().json.output.post_text.slice(0, 400) }}\n--- Threads ---\n{{ $('Threads Writer').first().json.output.post_text.slice(0, 400) }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# VAI TRÒ\nBạn là thành viên tích cực trong các group việc làm trên Facebook, viết bài tuyển dụng hợp \"luật group\".\n\n# YÊU CẦU BÀI FACEBOOK GROUPS\n- Giọng cộng đồng, chân thành, dễ đọc trên điện thoại; mỗi đoạn 1-3 dòng.\n- Dòng đầu là tiêu đề viết HOA gồm chữ \"TUYỂN\", tên vị trí, tên công ty và địa điểm (nếu JD có), ví dụ: \"🔥 HÀ NỘI – TUYỂN KẾ TOÁN TỔNG HỢP – CÔNG TY ABC\". Không dùng ngoặc vuông.\n- Emoji vừa phải (4-8 emoji, làm icon đầu dòng như 📍 💰 ✅ 📩).\n- Liệt kê ngắn: địa điểm, hình thức, lương (chỉ khi có), yêu cầu chính, quyền lợi chính.\n- Kết bài nhắc ứng viên liên hệ QUA ĐÚNG KÊNH trong JD (`thong_tin_lien_he`); nếu \"Không nêu\" thì mời \"để lại bình luận/inbox\".\n- KHÔNG giống bài Facebook Page: không dùng giọng thương hiệu \"Chúng tôi tự hào...\", không CTA kiểu quảng cáo.\n- Tối đa khoảng 1500 ký tự. `hashtags`: 2-4 hashtag.\n\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\n- Chỉ dùng dữ liệu trong \"Dữ liệu JD đã phân tích\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\n- Nếu `muc_luong_chuan_hoa` là \"Không nêu\": KHÔNG nhắc con số lương nào; có thể ghi \"Lương: Thỏa thuận/trao đổi khi phỏng vấn\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\n- Nếu `thong_tin_lien_he` khác \"Không nêu\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \"Không nêu\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \"XXX\".\n- Hashtag trong `hashtags` bắt đầu bằng \"#\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\n- Nếu có \"Ghi chú sửa lỗi\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2400,
+        300
+      ],
+      "id": "734dd71e-3f6a-ac7f-6761-81c1ef930090",
+      "name": "Facebook Groups Writer",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.8,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        2320,
+        520
+      ],
+      "id": "612cf5db-ea0f-b1ab-055a-61a1b8911694",
+      "name": "Facebook Groups Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_text\": { \"type\": \"string\", \"description\": \"Nội dung bài đăng, không gồm hashtag\" },\n    \"hashtags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"cta\": { \"type\": \"string\" }\n  },\n  \"required\": [\"post_text\", \"hashtags\", \"cta\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2540,
+        520
+      ],
+      "id": "bc9f2e45-de75-abb5-f29e-623a4ca00d6d",
+      "name": "Facebook Groups Parser"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Hãy viết bài đăng tuyển dụng cho nền tảng Facebook Page.\n\nTên công ty: {{ $('Generate JD ID').first().json['Tên Công Ty'] }}\nDữ liệu JD đã phân tích (JSON):\n{{ JSON.stringify($('JD Analyzer').first().json.output, null, 2) }}\n\nCác bài đã viết cho nền tảng khác (KHÔNG lặp lại câu mở đầu, cấu trúc hay câu chữ):\n--- LinkedIn ---\n{{ $('LinkedIn Writer').first().json.output.post_text.slice(0, 400) }}\n--- Threads ---\n{{ $('Threads Writer').first().json.output.post_text.slice(0, 400) }}\n--- Facebook Groups ---\n{{ $('Facebook Groups Writer').first().json.output.post_text.slice(0, 400) }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# VAI TRÒ\nBạn là người quản lý fanpage thương hiệu tuyển dụng (Employer Branding) của công ty.\n\n# YÊU CẦU BÀI FACEBOOK PAGE\n- Giọng thương hiệu: tự tin, ấm áp, thể hiện văn hóa và giá trị công ty (chỉ dựa trên dữ liệu JD, không bịa văn hóa/giải thưởng).\n- Cấu trúc: câu mở đầu truyền cảm hứng → vì sao vị trí này đáng giá (dựa `diem_hap_dan`) → bạn là người phù hợp nếu... → quyền lợi → lương (chỉ khi có) → CTA rõ ràng.\n- CTA rõ, có động từ mạnh (\"Gửi CV ngay hôm nay qua ...\", \"Nhắn tin cho Page để ...\") và dùng đúng kênh liên hệ trong JD.\n- Emoji 2-5, tinh tế. Tối đa khoảng 2000 ký tự.\n- Phải khác bài Facebook Groups về cấu trúc và giọng điệu.\n- `hashtags`: 3-5 hashtag (có thể gồm hashtag tên công ty viết liền không dấu).\n\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\n- Chỉ dùng dữ liệu trong \"Dữ liệu JD đã phân tích\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\n- Nếu `muc_luong_chuan_hoa` là \"Không nêu\": KHÔNG nhắc con số lương nào; có thể ghi \"Lương: Thỏa thuận/trao đổi khi phỏng vấn\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\n- Nếu `thong_tin_lien_he` khác \"Không nêu\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \"Không nêu\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \"XXX\".\n- Hashtag trong `hashtags` bắt đầu bằng \"#\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\n- Nếu có \"Ghi chú sửa lỗi\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2820,
+        300
+      ],
+      "id": "b0f294b8-b656-ee2d-bd60-221ce30b4056",
+      "name": "Facebook Page Writer",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        2740,
+        520
+      ],
+      "id": "e313ef43-a6c8-48e1-2303-b7c1b54ae03c",
+      "name": "Facebook Page Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_text\": { \"type\": \"string\", \"description\": \"Nội dung bài đăng, không gồm hashtag\" },\n    \"hashtags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"cta\": { \"type\": \"string\" }\n  },\n  \"required\": [\"post_text\", \"hashtags\", \"cta\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        2960,
+        520
+      ],
+      "id": "43c66f2d-3c8f-9c04-9fe7-1ddbda8ca890",
+      "name": "Facebook Page Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "285b7718-0374-e2a4-4b43-aa46ead83db9",
+              "name": "jd_id",
+              "value": "={{ $('Generate JD ID').first().json.jd_id }}",
+              "type": "string"
+            },
+            {
+              "id": "96542606-d224-6a6a-7106-685b37fae9bc",
+              "name": "poster_position",
+              "value": "={{ ($('JD Analyzer').first().json.output.job_title_chuan || $('Generate JD ID').first().json['Vị Trí']).trim().slice(0, 40) }}",
+              "type": "string"
+            },
+            {
+              "id": "64012f29-0809-755c-f7d9-8f921e35124a",
+              "name": "poster_company",
+              "value": "={{ $('Generate JD ID').first().json['Tên Công Ty'].trim().replace(/^công ty\\s+((cổ phần|tnhh)(\\s+mtv)?\\s+)?/iu, '').toUpperCase().slice(0, 26) }}",
+              "type": "string"
+            },
+            {
+              "id": "0bff21e1-9ae4-ca53-146c-167d4c2e95e7",
+              "name": "poster_salary",
+              "value": "={{ /^\\s*(không nêu|khong neu)?\\s*$/i.test($('JD Analyzer').first().json.output.muc_luong_chuan_hoa ?? '') ? ' ' : ('Lương: ' + $('JD Analyzer').first().json.output.muc_luong_chuan_hoa).slice(0, 40) }}",
+              "type": "string"
+            },
+            {
+              "id": "ba95ac67-135a-ff4a-181e-984650297e47",
+              "name": "poster_highlights",
+              "value": "={{ ($('JD Analyzer').first().json.output.diem_hap_dan || []).slice(0, 3).map(h => '• ' + h.trim().slice(0, 45)).join('\\n') || ' ' }}",
+              "type": "string"
+            },
+            {
+              "id": "64ac4b7d-771f-d691-9e08-1ac453548152",
+              "name": "poster_contact",
+              "value": "={{ /^\\s*(không nêu|khong neu)?\\s*$/i.test($('JD Analyzer').first().json.output.thong_tin_lien_he ?? '') ? ' ' : ('Liên hệ: ' + $('JD Analyzer').first().json.output.thong_tin_lien_he).slice(0, 60) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3300,
+        300
+      ],
+      "id": "7060585a-c401-fd00-2e9c-218f08621a85",
+      "name": "Poster Content Selector"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1d52dc8-21bd-0f0c-cc62-7b3a37abebe0",
+              "name": "industry",
+              "value": "={{ $('JD Analyzer').first().json.output.nganh_nghe }}",
+              "type": "string"
+            },
+            {
+              "id": "3a61d852-c057-3aab-0088-ffe846b12f4c",
+              "name": "visual",
+              "value": "={{ ({\"Công nghệ thông tin\":{\"style\":\"modern minimalist tech, clean geometric shapes, subtle circuit and data-flow motifs, soft glow\",\"palette\":\"#0B1F3A navy, #2F80ED electric blue, #56CCF2 cyan, white\",\"panel\":\"#0B1F3A26\",\"accent\":\"#56CCF2\"},\"F&B\":{\"style\":\"warm and cozy, natural daylight, appetizing food and cafe ambience, soft bokeh\",\"palette\":\"#3E2723 espresso brown, #F2994A warm orange, #F2C94C honey, cream\",\"panel\":\"#3E272326\",\"accent\":\"#F2C94C\"},\"Tài chính - Ngân hàng\":{\"style\":\"luxurious and trustworthy, elegant architecture, marble and gold accents, refined lighting\",\"palette\":\"#0A1A2F deep navy, #C9A227 gold, #E5E5E5 silver, white\",\"panel\":\"#0A1A2F26\",\"accent\":\"#C9A227\"},\"Bán lẻ\":{\"style\":\"vibrant and friendly retail store scene, colorful shelves, energetic\",\"palette\":\"#4A148C purple, #FF4081 pink, #FFD54F yellow, white\",\"panel\":\"#4A148C26\",\"accent\":\"#FFD54F\"},\"Sản xuất\":{\"style\":\"industrial and solid, modern factory, safety gear, strong perspective\",\"palette\":\"#263238 charcoal, #FF6F00 safety orange, #90A4AE steel, white\",\"panel\":\"#26323826\",\"accent\":\"#FF9800\"},\"Giáo dục\":{\"style\":\"bright and inspiring, books, classroom light, hopeful mood\",\"palette\":\"#1B3A4B teal navy, #27AE60 green, #F2C94C yellow, white\",\"panel\":\"#1B3A4B26\",\"accent\":\"#F2C94C\"},\"Y tế\":{\"style\":\"clean and caring, bright clinic, soft light, calm\",\"palette\":\"#0D3B66 medical blue, #2EC4B6 teal, #E0FBFC mint, white\",\"panel\":\"#0D3B6626\",\"accent\":\"#2EC4B6\"},\"Marketing - Truyền thông\":{\"style\":\"bold creative, dynamic shapes, studio lighting, trendy\",\"palette\":\"#1A1A2E midnight, #E94560 coral red, #F9ED69 lemon, white\",\"panel\":\"#1A1A2E26\",\"accent\":\"#F9ED69\"},\"Logistics\":{\"style\":\"dynamic movement, trucks and warehouse, motion lines, efficient\",\"palette\":\"#102A43 navy, #F0B429 amber, #9FB3C8 grey blue, white\",\"panel\":\"#102A4326\",\"accent\":\"#F0B429\"},\"Bất động sản\":{\"style\":\"premium modern architecture, skyline at golden hour\",\"palette\":\"#1C2833 graphite, #B9975B champagne gold, #D5D8DC light grey, white\",\"panel\":\"#1C283326\",\"accent\":\"#B9975B\"} })[$('JD Analyzer').first().json.output.nganh_nghe] ?? {\"style\":\"clean corporate, modern office, professional and friendly\",\"palette\":\"#13293D dark blue, #1B98E0 blue, #E8F1F2 off-white, white\",\"panel\":\"#13293D26\",\"accent\":\"#1B98E0\"} }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3520,
+        300
+      ],
+      "id": "e676116f-090c-f2bf-51f7-0a103da3f374",
+      "name": "Visual Style Selector"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create the background prompt for a recruitment poster.\nIndustry (Vietnamese): {{ $json.industry }}\nJob title (Vietnamese, for meaning only, DO NOT render as text): {{ $json.poster_position }}\nKey skills (meaning only): {{ ($('JD Analyzer').first().json.output.ky_nang_chinh || []).slice(0, 5).join(', ') }}\nVisual style: {{ $json.visual.style }}\nPalette: {{ $json.visual.palette }}\nCanvas: 1024x1536 portrait. Bottom 40% must be a calm dark area for overlay text; top-left corner clear for a logo.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# ROLE\nYou are an art director who writes prompts for an AI image model (gpt-image-1) to create a VERTICAL recruitment poster BACKGROUND, 1024x1536 (2:3 portrait).\n\n# HARD RULES\n1. Write the prompt in ENGLISH only.\n2. The image model misspells Vietnamese diacritics, so the poster must contain NO TEXT, NO letters, NO numbers, NO fake logos, NO watermarks. All Vietnamese text (job title, company, salary, highlights, contact) is overlaid later by code.\n3. Layout: the TOP ~60% (y 0-920 px) holds the visual illustration/photo scene; the BOTTOM ~40% (y 920-1536 px) must be a CLEAN, calm, low-detail area in the dark base color of the palette so white text stays readable. Also keep a small clear zone in the top-left corner (about 220x220 px) for a company logo.\n4. Use the provided palette (hex colors) and visual style exactly; describe lighting, composition, mood, camera/illustration style.\n5. Represent the job and industry with symbolic, professional, diverse imagery (people of Southeast Asian appearance when people are shown). No brand names, no copyrighted characters, no real persons.\n6. Keep it under 900 characters.\n\nReturn JSON with:\n- `image_prompt`: the full English prompt.\n- `negative_notes`: short English list of things to avoid (text, letters, watermark...).\n- `layout_notes`: short English description of the reserved text/logo zones."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        3760,
+        300
+      ],
+      "id": "f71a368a-dd66-139e-9921-add558c62393",
+      "name": "Image Prompt Builder",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        3680,
+        520
+      ],
+      "id": "b944ac3e-7bcc-02e0-f2b7-8baeb8846b4f",
+      "name": "Image Prompt",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"image_prompt\": { \"type\": \"string\" },\n    \"negative_notes\": { \"type\": \"string\" },\n    \"layout_notes\": { \"type\": \"string\" }\n  },\n  \"required\": [\"image_prompt\", \"negative_notes\", \"layout_notes\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3900,
+        520
+      ],
+      "id": "9d0fba98-ea0a-3a8e-95aa-5071fb44015e",
+      "name": "Image Prompt Parser"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "={{ $('Config').first().json.logo_path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        4060,
+        300
+      ],
+      "id": "25dca4dd-b0e7-5183-b6ad-15ce7c52f400",
+      "name": "Read Logo File",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d3130171-3528-bd90-1c73-7a5f9e547991",
+              "leftValue": "={{ Boolean($binary?.data) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4280,
+        300
+      ],
+      "id": "cf1a4b82-c456-fea5-7954-87e580d3d5e6",
+      "name": "Has Logo"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gộp prompt ảnh (JSON) với binary logo và đổi tên binary thành \"logo\" cho node Edit Image của OpenAI.\nconst promptOut = $('Image Prompt Builder').first().json.output;\nreturn $input.all().map((item) => ({\n  json: {\n    image_prompt: promptOut.image_prompt +\n      '\\nUse the provided image as the company logo: place it small, unchanged and undistorted, in the top-left reserved zone. ' +\n      'Do not add any text, letters or numbers anywhere. Avoid: ' + promptOut.negative_notes,\n  },\n  binary: { logo: item.binary.data },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4500,
+        200
+      ],
+      "id": "f7359c0f-3e15-68aa-cbcd-91fa12b06540",
+      "name": "Attach Logo",
+      "notes": "Why Code: cần ghép JSON prompt với binary logo và đổi tên binary property trong cùng một item."
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "edit",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.image_model }}"
+        },
+        "prompt": "={{ $json.image_prompt }}",
+        "images": {
+          "values": [
+            {
+              "binaryPropertyName": "logo"
+            }
+          ]
+        },
+        "size": "1024x1536",
+        "quality": "high",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        4720,
+        200
+      ],
+      "id": "2291a110-c3c9-5f73-e0f1-80867da781f2",
+      "name": "Generate Image With Logo",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiLocal00001",
+          "name": "OpenAI (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "generate",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.image_model }}"
+        },
+        "prompt": "={{ $('Image Prompt Builder').first().json.output.image_prompt }}\nAvoid: {{ $('Image Prompt Builder').first().json.output.negative_notes }}",
+        "options": {
+          "size": "1024x1536",
+          "quality": "high"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        4720,
+        420
+      ],
+      "id": "69395514-475b-f565-38ca-9a1a1a48ac61",
+      "name": "Generate Image",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiLocal00001",
+          "name": "OpenAI (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "380e537a-cdae-dd48-7ca1-adb49d020f7e",
+              "leftValue": "={{ $('Config').first().json.enable_text_overlay }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4960,
+        300
+      ],
+      "id": "22a5ce23-bb89-e917-4d32-9be7f99a169a",
+      "name": "Text Overlay Enabled?"
+    },
+    {
+      "parameters": {
+        "operation": "multiStep",
+        "dataPropertyName": "data",
+        "operations": {
+          "operations": [
+            {
+              "operation": "draw",
+              "primitive": "rectangle",
+              "color": "={{ $('Visual Style Selector').first().json.visual.panel }}",
+              "startPositionX": 0,
+              "startPositionY": 940,
+              "endPositionX": 1024,
+              "endPositionY": 1536
+            },
+            {
+              "operation": "draw",
+              "primitive": "rectangle",
+              "color": "={{ $('Visual Style Selector').first().json.visual.accent }}",
+              "startPositionX": 72,
+              "startPositionY": 948,
+              "endPositionX": 232,
+              "endPositionY": 954
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('Poster Content Selector').first().json.poster_company }} TUYỂN DỤNG",
+              "fontSize": 34,
+              "fontColor": "={{ $('Visual Style Selector').first().json.visual.accent }}",
+              "positionX": 72,
+              "positionY": 1000,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 48,
+              "font": "={{ $('Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('Poster Content Selector').first().json.poster_position }}",
+              "fontSize": 62,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1065,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 24,
+              "font": "={{ $('Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('Poster Content Selector').first().json.poster_salary }}",
+              "fontSize": 44,
+              "fontColor": "={{ $('Visual Style Selector').first().json.visual.accent }}",
+              "positionX": 72,
+              "positionY": 1230,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 36,
+              "font": "={{ $('Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('Poster Content Selector').first().json.poster_highlights }}",
+              "fontSize": 30,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1300,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 52,
+              "font": "={{ $('Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('Poster Content Selector').first().json.poster_contact }}",
+              "fontSize": 32,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1465,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 52,
+              "font": "={{ $('Config').first().json.overlay_font }}"
+            }
+          ]
+        },
+        "options": {
+          "format": "png",
+          "fileName": "=poster-{{ $('Generate JD ID').first().json.jd_id }}.png"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1.1,
+      "position": [
+        5180,
+        200
+      ],
+      "id": "ca19e05a-892d-a095-c6fc-8b2c30f25208",
+      "name": "Overlay Poster Text"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "data",
+        "name": "=poster-{{ $('Generate JD ID').first().json.jd_id }}.png",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive",
+          "cachedResultName": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.drive_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5420,
+        300
+      ],
+      "id": "c99dea97-d63a-4e90-fa84-d31cb082d318",
+      "name": "Upload to Drive",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        5640,
+        300
+      ],
+      "id": "c8f78447-fb57-875e-be76-0b98326c8885",
+      "name": "Share Anyone With Link",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// Kiểm tra chất lượng 4 bài; lần 2 (sau khi viết lại) nhận posts từ \"Merge Rewritten Posts\".\nconst a = $('JD Analyzer').first().json.output;\nconst form = $('Generate JD ID').first().json;\nconst upload = $('Upload to Drive').first().json;\nconst incoming = $input.first().json;\nconst attempt = incoming.attempt ?? 0;\nconst posts = incoming.posts ?? {\n  linkedin: $('LinkedIn Writer').first().json.output,\n  threads: $('Threads Writer').first().json.output,\n  facebook_groups: $('Facebook Groups Writer').first().json.output,\n  facebook_page: $('Facebook Page Writer').first().json.output,\n};\n\nconst RULES = {\n  linkedin: { label: 'LinkedIn', maxChars: 3000, minTags: 3, maxTags: 5 },\n  threads: { label: 'Threads', maxChars: 500, minTags: 0, maxTags: 2 },\n  facebook_groups: { label: 'Facebook Groups', maxChars: 2000, minTags: 0, maxTags: 4 },\n  facebook_page: { label: 'Facebook Page', maxChars: 2500, minTags: 3, maxTags: 5 },\n};\nconst notStated = (v) => /^\\s*(không nêu|khong neu)?\\s*$/i.test(v ?? '');\nconst normTag = (t) => '#' + String(t).replace(/^#+/, '').replace(/\\s+/g, '');\nconst sourceText = [form['Chi Tiết JD'], form['Mức Lương'], form['Liên Hệ']].join(' \\n ');\nconst sourceNumbers = new Set((sourceText.match(/\\d+(?:[.,]\\d+)?/g) || []).map((n) => n.replace(/[.,]/g, '')));\n\n// Token liên hệ: email, url, số điện thoại (chỉ giữ chữ số)\nconst contactRaw = notStated(a.thong_tin_lien_he) ? (form['Liên Hệ'] || '') : a.thong_tin_lien_he;\nconst contactTokens = [\n  ...(contactRaw.match(/[\\w.+-]+@[\\w-]+\\.[\\w.]+/g) || []).map((s) => s.toLowerCase()),\n  ...(contactRaw.match(/(?:https?:\\/\\/|www\\.)\\S+/g) || []).map((s) => s.toLowerCase()),\n  ...(contactRaw.match(/\\+?\\d[\\d .-]{7,}\\d/g) || []).map((s) => s.replace(/\\D/g, '')),\n];\nconst MONEY = /(\\d+(?:[.,]\\d+)?)\\s*(?:-|–|đến|tới)?\\s*(?:\\d+(?:[.,]\\d+)?)?\\s*(triệu|tr\\b|củ|nghìn|ngàn|k\\b|usd|\\$|vnđ|vnd|đồng)/gi;\nconst VI_CHARS = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;\n\nconst errors = {};\nconst finalPosts = {};\nfor (const [key, rule] of Object.entries(RULES)) {\n  const p = posts[key] || {};\n  const errs = [];\n  const text = String(p.post_text || '').trim();\n\n  // Hashtag: chuẩn hoá và cắt theo giới hạn (sửa tự động, không đánh trượt)\n  let tags = [...new Set((p.hashtags || []).map(normTag).filter((t) => t.length > 1))];\n  if (tags.length < rule.minTags) {\n    tags = [...new Set([...tags, ...(a.tu_khoa_hashtag || []).map(normTag)])];\n  }\n  tags = tags.slice(0, rule.maxTags);\n  const full = tags.length ? text + '\\n\\n' + tags.join(' ') : text;\n\n  if (!text) errs.push('Bài rỗng');\n  if (full.length > rule.maxChars) errs.push(`Vượt giới hạn ${rule.maxChars} ký tự (hiện ${full.length})`);\n  const ph = full.match(/\\{\\{[^}]*\\}\\}|\\[[^\\]\\n]{1,40}\\]|\\bXXX+\\b|<[A-ZÀ-Ỹa-zà-ỹ _]{2,30}>/);\n  if (ph) errs.push(`Còn placeholder: \"${ph[0]}\"`);\n  if (contactTokens.length) {\n    const lower = full.toLowerCase();\n    const digits = full.replace(/\\D/g, '');\n    const ok = contactTokens.some((t) => /^\\d+$/.test(t) ? digits.includes(t) : lower.includes(t));\n    if (!ok) errs.push('Thiếu thông tin liên hệ có trong JD (' + contactRaw + ')');\n  }\n  for (const m of full.matchAll(MONEY)) {\n    const nums = (m[0].match(/\\d+(?:[.,]\\d+)?/g) || []).map((n) => n.replace(/[.,]/g, ''));\n    const bad = nums.filter((n) => !sourceNumbers.has(n));\n    if (bad.length) errs.push(`Có số tiền không có trong JD: \"${m[0].trim()}\"`);\n  }\n  if (notStated(a.muc_luong_chuan_hoa) && /lương[^\\n]{0,25}\\d/i.test(full)) {\n    errs.push('JD không nêu lương nhưng bài có con số lương');\n  }\n  const letters = (full.match(/\\p{L}/gu) || []).length;\n  const viRatio = letters ? (full.match(VI_CHARS) || []).length / letters : 0;\n  if (letters && viRatio < 0.03) errs.push('Có vẻ không phải tiếng Việt có dấu');\n\n  if (errs.length) errors[key] = errs;\n  finalPosts[key] = { post_text: text, hashtags: tags, cta: p.cta || '', full_text: full };\n}\n\nconst fileId = upload.id;\nconst summary = Object.entries(errors)\n  .map(([k, e]) => `${RULES[k].label}: ${e.join('; ')}`)\n  .join(' || ');\nreturn [{\n  json: {\n    jd_id: form.jd_id,\n    attempt,\n    valid: Object.keys(errors).length === 0,\n    errors,\n    error_summary: summary,\n    posts: finalPosts,\n    warnings: (a.canh_bao_thieu_thong_tin || []).join('; '),\n    poster_url: upload.webViewLink || (fileId ? `https://drive.google.com/file/d/${fileId}/view` : ''),\n    poster_direct_url: fileId ? `https://drive.google.com/uc?export=view&id=${fileId}` : '',\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5900,
+        300
+      ],
+      "id": "76af0271-8a2a-dc80-a5fc-3be0003f5332",
+      "name": "Check Posts Quality",
+      "notes": "Why Code: nhiều quy tắc kiểm tra (regex lương/liên hệ/placeholder/tỉ lệ dấu tiếng Việt) trên 4 bài cùng lúc."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "faeeec62-8de4-28b1-3194-a589b692f48e",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6120,
+        300
+      ],
+      "id": "d52f4ec2-7643-e828-80f4-60adb191eca3",
+      "name": "All Posts Valid"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tách 1 item (4 bài) thành 4 dòng cho tab Posts.\nconst d = $input.first().json;\nconst LABELS = { linkedin: 'LinkedIn', threads: 'Threads', facebook_groups: 'Facebook Groups', facebook_page: 'Facebook Page' };\nconst createdAt = $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss');\nreturn Object.entries(LABELS).map(([key, label]) => ({\n  json: {\n    jd_id: d.jd_id,\n    platform: label,\n    post_text: d.posts[key].full_text,\n    hashtags: d.posts[key].hashtags.join(' '),\n    poster_url: d.poster_url,\n    status: 'Draft',\n    created_at: createdAt,\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6360,
+        200
+      ],
+      "id": "ea58106d-dab4-943d-f205-63ed0005de23",
+      "name": "Build Rows",
+      "notes": "Why Code: ánh xạ object 4 nền tảng thành 4 item có nhãn platform trong một bước."
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.jd_id }}",
+            "platform": "={{ $json.platform }}",
+            "post_text": "={{ $json.post_text }}",
+            "hashtags": "={{ $json.hashtags }}",
+            "poster_url": "={{ $json.poster_url }}",
+            "status": "={{ $json.status }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "post_text",
+              "displayName": "post_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hashtags",
+              "displayName": "hashtags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6580,
+        200
+      ],
+      "id": "528acb5f-4f0f-2cbc-8966-779ee7550924",
+      "name": "Append to Posts",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $('Check Posts Quality').last().json.jd_id }}",
+            "status": "Done",
+            "error_message": "",
+            "poster_url": "={{ $('Check Posts Quality').last().json.poster_url }}",
+            "warnings": "={{ $('Check Posts Quality').last().json.warnings }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jd_detail",
+              "displayName": "jd_detail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6800,
+        200
+      ],
+      "id": "320a224d-88bc-5143-92d4-855157bbafb5",
+      "name": "Set Done",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0ace6a98-e380-9f2f-1d6c-105a0351d496",
+              "leftValue": "={{ $json.attempt }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6360,
+        440
+      ],
+      "id": "cae91384-0f80-066a-b1b3-1160fd82f14c",
+      "name": "Can Retry?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tạo 1 item cho mỗi bài bị lỗi để chain \"Rewrite Failed Post\" viết lại (tối đa 1 lần).\nconst d = $input.first().json;\nconst LIMITS = { linkedin: 'LinkedIn, tối đa 3000 ký tự, 3-5 hashtag', threads: 'Threads, tối đa 500 ký tự kể cả hashtag, 0-2 hashtag', facebook_groups: 'Facebook Groups, tối đa 1500 ký tự, 2-4 hashtag', facebook_page: 'Facebook Page, tối đa 2000 ký tự, 3-5 hashtag' };\nreturn Object.entries(d.errors).map(([platform, errs]) => ({\n  json: {\n    platform,\n    platform_rules: LIMITS[platform],\n    errors: errs.join('\\n- '),\n    original: d.posts[platform].post_text,\n    hashtags: d.posts[platform].hashtags.join(' '),\n  },\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6580,
+        440
+      ],
+      "id": "297c7411-00b3-1d8e-a081-61de7cb92099",
+      "name": "Prepare Rewrite",
+      "notes": "Why Code: sinh số item động theo danh sách bài lỗi."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Nền tảng: {{ $json.platform_rules }}\n\nGhi chú sửa lỗi:\n- {{ $json.errors }}\n\nBài gốc:\n{{ $json.original }}\n\nHashtag gốc: {{ $json.hashtags }}\n\nDữ liệu JD đã phân tích (JSON):\n{{ JSON.stringify($('JD Analyzer').first().json.output, null, 2) }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# VAI TRÒ\nBạn là biên tập viên kiểm duyệt bài đăng tuyển dụng. Bạn nhận MỘT bài đăng bị hệ thống kiểm tra chất lượng đánh trượt, kèm danh sách lỗi cụ thể và quy tắc của nền tảng. Hãy viết lại bài đó để hết lỗi.\n\n# NGUYÊN TẮC\n- Sửa ĐÚNG các lỗi được liệt kê; giữ giọng điệu, cấu trúc đặc trưng của nền tảng.\n- Tuân thủ giới hạn ký tự của nền tảng (LinkedIn ≤ 3000, Threads ≤ 500, Facebook Groups ≤ 1500, Facebook Page ≤ 2000).\n- Chỉ dùng dữ liệu JD đã phân tích. Không bịa lương, liên hệ, quyền lợi. Nếu lỗi là \"số lương không có trong JD\" → xóa con số đó.\n- Nếu JD có thông tin liên hệ → bài phải chứa nguyên văn thông tin đó.\n- Không để placeholder ({{...}}, [Tên], [Link], XXX). Tiếng Việt có dấu.\n\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\n- Chỉ dùng dữ liệu trong \"Dữ liệu JD đã phân tích\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\n- Nếu `muc_luong_chuan_hoa` là \"Không nêu\": KHÔNG nhắc con số lương nào; có thể ghi \"Lương: Thỏa thuận/trao đổi khi phỏng vấn\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\n- Nếu `thong_tin_lien_he` khác \"Không nêu\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \"Không nêu\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \"XXX\".\n- Hashtag trong `hashtags` bắt đầu bằng \"#\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\n- Nếu có \"Ghi chú sửa lỗi\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        6820,
+        440
+      ],
+      "id": "399318f2-42cf-dc2f-2b5b-513b69e029ee",
+      "name": "Rewrite Failed Post",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-5-5"
+        },
+        "options": {
+          "temperature": 0.4,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        6740,
+        660
+      ],
+      "id": "4ecc9d19-c797-cd74-9e96-85c381683840",
+      "name": "Rewrite Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"post_text\": { \"type\": \"string\", \"description\": \"Nội dung bài đăng, không gồm hashtag\" },\n    \"hashtags\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"cta\": { \"type\": \"string\" }\n  },\n  \"required\": [\"post_text\", \"hashtags\", \"cta\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        6960,
+        660
+      ],
+      "id": "1f799e48-8fa6-ce4e-bc43-0e7c5161e0a8",
+      "name": "Rewrite Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Thay các bài lỗi bằng bản viết lại rồi gửi về \"Check Posts Quality\" để kiểm tra lần cuối.\nconst first = $('Check Posts Quality').first().json;\nconst posts = JSON.parse(JSON.stringify(first.posts));\nconst plan = $('Prepare Rewrite').all();\n$input.all().forEach((item, i) => {\n  posts[plan[i].json.platform] = item.json.output;\n});\nreturn [{ json: { attempt: first.attempt + 1, posts } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7120,
+        440
+      ],
+      "id": "b8bd82c2-ce57-f77d-5ac9-2cc14b985287",
+      "name": "Merge Rewritten Posts",
+      "notes": "Why Code: ghép kết quả viết lại theo thứ tự item với danh sách nền tảng bị lỗi."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.jd_id }}",
+            "status": "Validation Failed",
+            "error_message": "={{ $json.error_summary }}",
+            "poster_url": "={{ $json.poster_url }}",
+            "warnings": "={{ $json.warnings }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jd_detail",
+              "displayName": "jd_detail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6580,
+        660
+      ],
+      "id": "753f0f99-c7da-2dee-ee1c-691c7c085c2c",
+      "name": "Set Validation Failed",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "content": "## [dev] JD → bài đăng đa nền tảng\nForm JD → Claude phân tích → 4 bài (LinkedIn, Threads, FB Groups, FB Page) → poster (OpenAI + overlay chữ tiếng Việt) → kiểm tra → Google Sheets.\n\n**Cần cấu hình:** node `Config` + `Error Config` (spreadsheet_id, drive_folder_id), credential Anthropic/OpenAI/Google, logo tại `local-files/jd-automation/logo.png` (tùy chọn).\n\n**Test:** kích hoạt workflow → mở URL production của form → dán JD trong `jd-automation/test-data/`.\nSettings > Error Workflow đã trỏ về chính workflow này.",
+        "height": 560,
+        "width": 380,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        40
+      ],
+      "id": "3b878279-a04d-c47d-6093-2cb294d96259",
+      "name": "Overview"
+    },
+    {
+      "parameters": {
+        "content": "## Prepare job description",
+        "height": 300,
+        "width": 1040,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        180
+      ],
+      "id": "b6c5bb05-7038-75b1-0188-2a0d5bbb41b9",
+      "name": "Nhóm 1 - Prepare job description"
+    },
+    {
+      "parameters": {
+        "content": "## Flag failed job\nChỉ chạy khi workflow đang **active** và một execution production bị lỗi.",
+        "height": 300,
+        "width": 860,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        780
+      ],
+      "id": "caa668ec-e449-4842-2cf4-63cbff0c2590",
+      "name": "Nhóm 2 - Flag failed job"
+    },
+    {
+      "parameters": {
+        "content": "## Analyze job description",
+        "height": 520,
+        "width": 420,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        180
+      ],
+      "id": "9c274e5f-b204-68b5-c6b5-88586259cd5e",
+      "name": "Nhóm 3 - Analyze job description"
+    },
+    {
+      "parameters": {
+        "content": "## Write platform posts",
+        "height": 520,
+        "width": 1720,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        180
+      ],
+      "id": "311bbf29-bd6f-1449-0699-cedbec913e97",
+      "name": "Nhóm 4 - Write platform posts"
+    },
+    {
+      "parameters": {
+        "content": "## Plan poster",
+        "height": 520,
+        "width": 760,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3240,
+        180
+      ],
+      "id": "e52312a6-324f-9f59-7153-65980bab7c0a",
+      "name": "Nhóm 5 - Plan poster"
+    },
+    {
+      "parameters": {
+        "content": "## Create poster\nOverlay chữ bật/tắt bằng `Config.enable_text_overlay`.",
+        "height": 520,
+        "width": 1800,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4020,
+        80
+      ],
+      "id": "486fda58-f3c4-b171-2444-da7a9646ebf1",
+      "name": "Nhóm 6 - Create poster"
+    },
+    {
+      "parameters": {
+        "content": "## Validate and save\nTối đa 1 lần viết lại bài lỗi.",
+        "height": 780,
+        "width": 1500,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5860,
+        80
+      ],
+      "id": "355047ac-fdf0-83ee-a647-2e5f490b6504",
+      "name": "Nhóm 7 - Validate and save"
+    }
+  ],
+  "connections": {
+    "JD Input Form": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Generate JD ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate JD ID": {
+      "main": [
+        [
+          {
+            "node": "Add JD Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add JD Row": {
+      "main": [
+        [
+          {
+            "node": "Set Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Error Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Config": {
+      "main": [
+        [
+          {
+            "node": "Find Processing JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Processing JD": {
+      "main": [
+        [
+          {
+            "node": "Set Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "JD Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "JD Analysis Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JD Analysis Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "JD Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Processing": {
+      "main": [
+        [
+          {
+            "node": "JD Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Writer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "LinkedIn Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "LinkedIn Writer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threads Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Threads Writer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Threads Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threads Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Threads Writer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Groups Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Facebook Groups Writer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Facebook Groups Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Groups Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Facebook Groups Writer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Page Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Facebook Page Writer",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Facebook Page Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Page Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Facebook Page Writer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JD Analyzer": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Writer": {
+      "main": [
+        [
+          {
+            "node": "Threads Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Threads Writer": {
+      "main": [
+        [
+          {
+            "node": "Facebook Groups Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Groups Writer": {
+      "main": [
+        [
+          {
+            "node": "Facebook Page Writer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Prompt": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Image Prompt Builder",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Image Prompt Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Prompt Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Image Prompt Builder",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Page Writer": {
+      "main": [
+        [
+          {
+            "node": "Poster Content Selector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poster Content Selector": {
+      "main": [
+        [
+          {
+            "node": "Visual Style Selector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Visual Style Selector": {
+      "main": [
+        [
+          {
+            "node": "Image Prompt Builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Prompt Builder": {
+      "main": [
+        [
+          {
+            "node": "Read Logo File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Logo File": {
+      "main": [
+        [
+          {
+            "node": "Has Logo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Logo": {
+      "main": [
+        [
+          {
+            "node": "Attach Logo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Logo": {
+      "main": [
+        [
+          {
+            "node": "Generate Image With Logo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image With Logo": {
+      "main": [
+        [
+          {
+            "node": "Text Overlay Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Text Overlay Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Overlay Enabled?": {
+      "main": [
+        [
+          {
+            "node": "Overlay Poster Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Overlay Poster Text": {
+      "main": [
+        [
+          {
+            "node": "Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload to Drive": {
+      "main": [
+        [
+          {
+            "node": "Share Anyone With Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rewrite Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Rewrite Failed Post",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Rewrite Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rewrite Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Rewrite Failed Post",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Share Anyone With Link": {
+      "main": [
+        [
+          {
+            "node": "Check Posts Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Posts Quality": {
+      "main": [
+        [
+          {
+            "node": "All Posts Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All Posts Valid": {
+      "main": [
+        [
+          {
+            "node": "Build Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Can Retry?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Rows": {
+      "main": [
+        [
+          {
+            "node": "Append to Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Posts": {
+      "main": [
+        [
+          {
+            "node": "Set Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Can Retry?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Rewrite",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Validation Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Rewrite": {
+      "main": [
+        [
+          {
+            "node": "Rewrite Failed Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rewrite Failed Post": {
+      "main": [
+        [
+          {
+            "node": "Merge Rewritten Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Rewritten Posts": {
+      "main": [
+        [
+          {
+            "node": "Check Posts Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "jdAutoPostV20001",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

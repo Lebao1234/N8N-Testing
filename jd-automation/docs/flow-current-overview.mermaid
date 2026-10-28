@@ -1,0 +1,19 @@
+%% Sơ đồ TỔNG QUAN (nhóm → nhóm) — [dev] jd-tuyen-dung-da-nen-tang (jdAutoPostV20001), 2026-10-28
+%% Chi tiết từng node: docs/flow-current.mermaid
+flowchart LR
+  classDef ext fill:#bfdbfe,stroke:#1d4ed8,color:#111
+  classDef bad fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111
+
+  U(["Người dùng gửi form JD"]) --> G1["1 · Prepare job description<br/>5 node · Sheets ×2<br/>status New → Processing"]
+  G1 --> G3["3 · Analyze job description<br/>1 + 2 phụ · Claude ×1"]
+  G3 --> G4["4 · Write platform posts<br/>4 + 8 phụ · Claude ×4 (tuần tự)"]
+  G4 --> G5["5 · Plan poster<br/>3 + 2 phụ · Claude ×1"]
+  G5 --> G6["6 · Create poster<br/>9 node · OpenAI ×1 · Drive ×2"]
+  G6 --> G7["7 · Validate and save<br/>10 + 2 phụ · Sheets ×2–3<br/>(+ Claude ×k nếu rewrite)"]
+  G7 -- "rewrite tối đa 1 lần" --> G7
+  G7 --> OK(["JD = Done<br/>Posts = 4 dòng Draft"]):::ext
+  G7 --> VF(["JD = Validation Failed<br/>bài KHÔNG được lưu"]):::bad
+
+  X{{"Bất kỳ node nào lỗi<br/>(execution production)"}} -.-> G2["2 · Flag failed job<br/>Error Trigger · Sheets ×2"]
+  G2 --> ER(["JD = Error + lý do"]):::bad
+  G1 & G3 & G4 & G5 & G6 & G7 -.-> X

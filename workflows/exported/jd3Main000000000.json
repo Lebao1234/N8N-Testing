@@ -1,0 +1,1439 @@
+{
+  "updatedAt": "2026-10-28T04:34:02.891Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3Main000000000",
+  "name": "[dev] jd-00-main",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "basicAuth",
+        "formTitle": "Thông Tin JD Công Việc",
+        "formDescription": "Vui lòng điền đầy đủ thông tin tuyển dụng bên dưới để hệ thống tiếp nhận và xử lý.\n\n• Tên Công Ty: tên đầy đủ của doanh nghiệp tuyển dụng\n• Vị Trí: chức danh cần tuyển (ví dụ: Nhân viên Marketing)\n• Chi Tiết JD: mô tả công việc, yêu cầu ứng viên, quyền lợi\n• Mức Lương: ghi khoảng cụ thể (ví dụ: 15-25 triệu) hoặc \"Thỏa thuận\"\n• Liên Hệ: số điện thoại hoặc email nhận hồ sơ\n\nCác trường có dấu * là bắt buộc. Thông tin của bạn sẽ được bảo mật và chỉ dùng cho mục đích tuyển dụng.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Tên Công Ty",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Vị Trí",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Chi Tiết JD",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Mức Lương"
+            },
+            {
+              "fieldLabel": "Liên Hệ",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "=Đã nhận JD. Mã theo dõi: exec-{{ $execution.id }} (cột execution_id trong tab JD). Hệ thống cần khoảng 2–4 phút để tạo bài và poster; bài sẽ ở trạng thái Draft chờ duyệt."
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        400
+      ],
+      "id": "1351d961-078a-ff4f-1c5f-37032b50c192",
+      "name": "[Prepare] Receive JD form",
+      "webhookId": "d6a4e536-c496-215d-68bc-95facc91d3e9",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "CLtFsk0dNV90Z52V",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "action": "generate",
+        "dataPropertyName": "jd_id",
+        "encodingType": "uuid"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        220,
+        400
+      ],
+      "id": "2297b7a2-a66b-180b-8888-b04625f1dc8b",
+      "name": "[Prepare] Generate JD ID"
+    },
+    {
+      "parameters": {
+        "action": "hash",
+        "type": "SHA256",
+        "binaryData": false,
+        "encoding": "hex",
+        "dataPropertyName": "content_hash",
+        "value": "={{ [$json['Tên Công Ty'], $json['Vị Trí'], $json['Chi Tiết JD']].join('|').toLowerCase().replace(/\\s+/g, ' ').trim() }}"
+      },
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "id": "73a18bb5-648b-d268-7385-32dcc1f1392d",
+      "name": "[Prepare] Hash JD content"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3Config0000000",
+          "cachedResultName": "[dev] jd-config"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        660,
+        400
+      ],
+      "id": "f9f0ab57-da5b-bd5a-4699-9ee4b4dac30d",
+      "name": "[Prepare] Load config"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Tạo object job chuẩn: mọi sub-workflow chỉ đọc/ghi job, không tham chiếu node xa.\n  const FORM_KEYS = ['Tên Công Ty', 'Vị Trí', 'Chi Tiết JD', 'Mức Lương', 'Liên Hệ', 'submittedAt', 'formMode', 'jd_id', 'content_hash'];\n  const d = $input.first().json;\n  const config = Object.fromEntries(Object.entries(d).filter(([k]) => !FORM_KEYS.includes(k)));\n  const base = String(config.n8n_base_url || '').replace(/\\/$/, '');\n  return [{\n    json: {\n      job: {\n        jd_id: d.jd_id,\n        content_hash: d.content_hash,\n        execution_id: `exec-${$execution.id}`,\n        execution_url: `${base}/workflow/${$workflow.id}/executions/${$execution.id}`,\n        form: {\n          company: String(d['Tên Công Ty'] || '').trim(),\n          position: String(d['Vị Trí'] || '').trim(),\n          jd_detail: String(d['Chi Tiết JD'] || '').trim(),\n          salary: String(d['Mức Lương'] || '').trim(),\n          contact: String(d['Liên Hệ'] || '').trim(),\n        },\n        config,\n      },\n    },\n  }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        400
+      ],
+      "id": "2a1a6e1c-6fe9-3d6b-e772-3dfbb935433d",
+      "name": "[Prepare] Build job",
+      "notes": "Why Code: tách form và cấu hình thành object job lồng nhau (hợp đồng dữ liệu giữa các workflow)."
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "content_hash",
+              "lookupValue": "={{ $json.job.content_hash }}"
+            }
+          ]
+        },
+        "combineFilters": "AND",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1100,
+        400
+      ],
+      "id": "2ffde980-505d-7db5-8d40-389f54c7125e",
+      "name": "[Prepare] Find same JD",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0430a8ec-abac-be5a-d30f-3292cfcdd329",
+              "leftValue": "={{ $input.all().some(r => ['Processing', 'Done', 'Needs Review', 'Published', 'Partially Published'].includes(r.json.status)) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        400
+      ],
+      "id": "c3b36e0a-fbee-768c-46c5-32d1cc9e2245",
+      "name": "[Prepare] Is duplicate?",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Prepare] Build job').first().json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $('[Prepare] Build job').first().json.job.jd_id }}",
+            "created_at": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "company": "={{ $('[Prepare] Build job').first().json.job.form.company }}",
+            "position": "={{ $('[Prepare] Build job').first().json.job.form.position }}",
+            "status": "Duplicate",
+            "step": "stopped",
+            "error_message": "={{ 'Trùng nội dung với jd_id ' + ($('[Prepare] Find same JD').all().find(r => ['Processing', 'Done', 'Needs Review', 'Published', 'Partially Published'].includes(r.json.status))?.json.jd_id ?? '?') + ' — không xử lý lại. Muốn chạy lại: đổi status dòng cũ thành Error.' }}",
+            "execution_id": "={{ $('[Prepare] Build job').first().json.job.execution_id }}",
+            "execution_url": "={{ $('[Prepare] Build job').first().json.job.execution_url }}",
+            "content_hash": "={{ $('[Prepare] Build job').first().json.job.content_hash }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_url",
+              "displayName": "execution_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content_hash",
+              "displayName": "content_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1540,
+        220
+      ],
+      "id": "f2c0a5e9-5776-31fb-a0ce-ce8610f6a245",
+      "name": "[Prepare] Log duplicate",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b4f2764a-0a0b-8a01-4dd8-e04473bc0f3c",
+              "name": "job",
+              "value": "={{ $('[Prepare] Build job').first().json.job }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        500
+      ],
+      "id": "24b1293c-68f7-ebf9-da5a-8e5607bcdb34",
+      "name": "[Prepare] Restore job"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.job.jd_id }}",
+            "created_at": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "company": "={{ $json.job.form.company }}",
+            "position": "={{ $json.job.form.position }}",
+            "jd_detail": "={{ $json.job.form.jd_detail }}",
+            "salary": "={{ $json.job.form.salary }}",
+            "contact": "={{ $json.job.form.contact }}",
+            "status": "Processing",
+            "step": "analyze",
+            "error_message": "",
+            "poster_url": "",
+            "warnings": "",
+            "execution_id": "={{ $json.job.execution_id }}",
+            "execution_url": "={{ $json.job.execution_url }}",
+            "content_hash": "={{ $json.job.content_hash }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "position",
+              "displayName": "position",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "jd_detail",
+              "displayName": "jd_detail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "salary",
+              "displayName": "salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact",
+              "displayName": "contact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_url",
+              "displayName": "execution_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content_hash",
+              "displayName": "content_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1760,
+        340
+      ],
+      "id": "14df05c1-0471-e6e4-381d-5482fdaf8718",
+      "name": "[Prepare] Add JD row",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3Analyze000000",
+          "cachedResultName": "[dev] jd-01-analyze"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1760,
+        560
+      ],
+      "id": "fd056f87-8115-bc57-01b9-670d83ba6ca6",
+      "name": "[Main] Run 01 Analyze"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.job.jd_id }}",
+            "step": "write",
+            "warnings": "={{ ($json.job.analysis.canh_bao_thieu_thong_tin || []).join('; ') }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1980,
+        340
+      ],
+      "id": "41381c8b-add4-4917-09e6-79e9962cc242",
+      "name": "[Main] Mark step write",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3WritePosts000",
+          "cachedResultName": "[dev] jd-02-write-posts"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        1980,
+        560
+      ],
+      "id": "3cb88334-02f1-b879-1a12-7623abe3ced9",
+      "name": "[Main] Run 02 Write posts"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.job.jd_id }}",
+            "step": "poster"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2200,
+        340
+      ],
+      "id": "cae02e62-de44-d025-5010-a9dc02c59075",
+      "name": "[Main] Mark step poster",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3Poster0000000",
+          "cachedResultName": "[dev] jd-03-poster"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2200,
+        560
+      ],
+      "id": "ada1864a-78c3-5087-f95e-dcb98076e3e9",
+      "name": "[Main] Run 03 Poster"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.job.jd_id }}",
+            "step": "validate",
+            "poster_url": "={{ $json.job.poster?.url ?? '' }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2420,
+        340
+      ],
+      "id": "c552e6b9-a3f1-7dcf-011c-74a81d4a53af",
+      "name": "[Main] Mark step validate",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3ValidateSave0",
+          "cachedResultName": "[dev] jd-04-validate-save"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2420,
+        560
+      ],
+      "id": "aa2f8cc3-cf1f-462f-2a0f-cb9c961d16af",
+      "name": "[Main] Run 04 Validate & save"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "03ee4397-1481-31a6-5aa5-0cfe517a21ca",
+              "leftValue": "={{ $json.job.validation.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "e8524d3a-3d90-3993-5ed1-4d6ab1c86952",
+              "leftValue": "={{ $json.job.validation.attempt }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2640,
+        560
+      ],
+      "id": "843ad2cd-c3f3-45da-83b1-3a99c18d2455",
+      "name": "[Main] Needs rewrite?"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3WritePosts000",
+          "cachedResultName": "[dev] jd-02-write-posts"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2860,
+        460
+      ],
+      "id": "b2284ff7-6123-e6d0-68fd-a7ca639afeee",
+      "name": "[Main] Run 02 Rewrite failed posts"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3ValidateSave0",
+          "cachedResultName": "[dev] jd-04-validate-save"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        3080,
+        460
+      ],
+      "id": "41a46dd8-614f-0143-4ac4-857c66ff76a2",
+      "name": "[Main] Run 04 Validate again"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        3300,
+        560
+      ],
+      "id": "8518f26a-82d7-a3d7-6a05-6c4d239522ff",
+      "name": "[Main] Final job"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.job.config.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.job.jd_id }}",
+            "status": "={{ $json.job.validation.valid ? 'Done' : 'Needs Review' }}",
+            "step": "finished",
+            "poster_url": "={{ $json.job.poster?.url ?? '' }}",
+            "warnings": "={{ ($json.job.analysis.canh_bao_thieu_thong_tin || []).join('; ') }}",
+            "error_message": "={{ [$json.job.validation.error_summary, $json.job.poster?.error].filter(Boolean).join(' || ') }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "poster_url",
+              "displayName": "poster_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "warnings",
+              "displayName": "warnings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3520,
+        460
+      ],
+      "id": "78c9de32-ca8e-5855-e531-b230a11807d2",
+      "name": "[Main] Set JD result",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8795be04-f621-6ea4-87c6-4ae5012da823",
+              "leftValue": "={{ $json.job.config.notify_channel }}",
+              "rightValue": "telegram",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3520,
+        680
+      ],
+      "id": "7d670ab5-9037-5d6a-dfe6-2cce9d87607b",
+      "name": "[Main] Notify reviewer?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.job.config.telegram_chat_id }}",
+        "text": "=🆕 JD \"{{ $json.job.form.position }}\" – {{ $json.job.form.company }}\n4 bài đã lưu tab Posts ({{ $json.job.validation.valid ? 'Draft, chờ duyệt' : 'có bài Needs Review' }}).\nĐổi status sang Approved để đăng.\nPoster: {{ $json.job.poster?.url || '(không có: ' + ($json.job.poster?.error || 'tắt') + ')' }}\njd_id: {{ $json.job.jd_id }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3740,
+        680
+      ],
+      "id": "4462f9a1-54c1-2891-5087-02b4b2edfe8b",
+      "name": "[Main] Notify reviewer",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 00 · Main (orchestrator)\n**Input:** form JD. **Output:** dòng JD (`Done` | `Needs Review` | `Duplicate`), 4 dòng Posts (upsert `post_key`).\nLuồng: chuẩn bị `job` → 01 Analyze → 02 Write (song song) → 03 Poster (lỗi mềm) → 04 Validate & save → viết lại tối đa 1 lần.\nNút `Mark step …` nằm phía trên chạy trước nhánh chính (executionOrder v1) để cột `step` cho biết job đang ở đâu.\n**Lỗi thường gặp:** chưa cấu hình `jd-config`; credential Google/Anthropic; lỗi bất kỳ → `jd-99-error-handler` ghi `Error`.",
+        "height": 280,
+        "width": 1200,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        40
+      ],
+      "id": "cfe2f6f1-3196-6ab5-0d20-fb8b7ceff3ea",
+      "name": "[Main] Tổng quan"
+    }
+  ],
+  "connections": {
+    "[Prepare] Receive JD form": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Generate JD ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Prepare] Generate JD ID": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Hash JD content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Prepare] Hash JD content": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Load config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Prepare] Load config": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Build job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Prepare] Build job": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Find same JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Prepare] Find same JD": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Is duplicate?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Prepare] Is duplicate?": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Log duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Prepare] Restore job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Prepare] Restore job": {
+      "main": [
+        [
+          {
+            "node": "[Prepare] Add JD row",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[Main] Run 01 Analyze",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Run 01 Analyze": {
+      "main": [
+        [
+          {
+            "node": "[Main] Mark step write",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[Main] Run 02 Write posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Run 02 Write posts": {
+      "main": [
+        [
+          {
+            "node": "[Main] Mark step poster",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[Main] Run 03 Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Run 03 Poster": {
+      "main": [
+        [
+          {
+            "node": "[Main] Mark step validate",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[Main] Run 04 Validate & save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Run 04 Validate & save": {
+      "main": [
+        [
+          {
+            "node": "[Main] Needs rewrite?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Needs rewrite?": {
+      "main": [
+        [
+          {
+            "node": "[Main] Run 02 Rewrite failed posts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Main] Final job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Run 02 Rewrite failed posts": {
+      "main": [
+        [
+          {
+            "node": "[Main] Run 04 Validate again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Run 04 Validate again": {
+      "main": [
+        [
+          {
+            "node": "[Main] Final job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Final job": {
+      "main": [
+        [
+          {
+            "node": "[Main] Set JD result",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[Main] Notify reviewer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Main] Notify reviewer?": {
+      "main": [
+        [
+          {
+            "node": "[Main] Notify reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "fa52210b-70dd-474c-a648-3327fd4c7458",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3Main000000000",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

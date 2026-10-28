@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "image_prompt": { "type": "string" },
+    "negative_notes": { "type": "string" },
+    "layout_notes": { "type": "string" }
+  },
+  "required": ["image_prompt", "negative_notes", "layout_notes"],
+  "additionalProperties": false
+}

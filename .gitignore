@@ -1,0 +1,32 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Dữ liệu file mount vào /files
+local-files/*
+!local-files/.gitkeep
+
+# Backup (DB dump, credential đã mã hoá/giải mã)
+backups/
+*.sql
+*.sql.gz
+*.dump
+*.bak
+*decrypted*.json
+
+# Thư mục tạm của scripts
+.tmp/
+
+# Binary data của n8n (ảnh poster, file tạm) — bind mount trên ổ D
+data/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+node_modules/

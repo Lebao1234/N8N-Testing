@@ -1,0 +1,226 @@
+{
+  "type": "object",
+  "properties": {
+    "analysis": {
+      "type": "object",
+      "properties": {
+        "job_title_chuan": {
+          "type": "string"
+        },
+        "nganh_nghe": {
+          "type": "string"
+        },
+        "cap_bac": {
+          "type": "string"
+        },
+        "dia_diem": {
+          "type": "string"
+        },
+        "hinh_thuc_lam_viec": {
+          "type": "string"
+        },
+        "muc_luong_chuan_hoa": {
+          "type": "string",
+          "description": "\"Không nêu\" nếu JD không có lương"
+        },
+        "kinh_nghiem_yeu_cau": {
+          "type": "string"
+        },
+        "ky_nang_chinh": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "quyen_loi_noi_bat": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "diem_hap_dan": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 3
+        },
+        "doi_tuong_ung_vien": {
+          "type": "string"
+        },
+        "tu_khoa_hashtag": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "giong_van_de_xuat": {
+          "type": "string"
+        },
+        "thong_tin_lien_he": {
+          "type": "string",
+          "description": "\"Không nêu\" nếu không có"
+        },
+        "canh_bao_thieu_thong_tin": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "job_title_chuan",
+        "nganh_nghe",
+        "cap_bac",
+        "dia_diem",
+        "hinh_thuc_lam_viec",
+        "muc_luong_chuan_hoa",
+        "kinh_nghiem_yeu_cau",
+        "ky_nang_chinh",
+        "quyen_loi_noi_bat",
+        "diem_hap_dan",
+        "doi_tuong_ung_vien",
+        "tu_khoa_hashtag",
+        "giong_van_de_xuat",
+        "thong_tin_lien_he",
+        "canh_bao_thieu_thong_tin"
+      ],
+      "additionalProperties": false
+    },
+    "posts": {
+      "type": "object",
+      "properties": {
+        "linkedin": {
+          "type": "object",
+          "properties": {
+            "post_text": {
+              "type": "string",
+              "description": "Nội dung bài đăng, không gồm hashtag"
+            },
+            "hashtags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cta": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "post_text",
+            "hashtags",
+            "cta"
+          ],
+          "additionalProperties": false
+        },
+        "threads": {
+          "type": "object",
+          "properties": {
+            "post_text": {
+              "type": "string",
+              "description": "Nội dung bài đăng, không gồm hashtag"
+            },
+            "hashtags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cta": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "post_text",
+            "hashtags",
+            "cta"
+          ],
+          "additionalProperties": false
+        },
+        "facebook_groups": {
+          "type": "object",
+          "properties": {
+            "post_text": {
+              "type": "string",
+              "description": "Nội dung bài đăng, không gồm hashtag"
+            },
+            "hashtags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cta": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "post_text",
+            "hashtags",
+            "cta"
+          ],
+          "additionalProperties": false
+        },
+        "facebook_page": {
+          "type": "object",
+          "properties": {
+            "post_text": {
+              "type": "string",
+              "description": "Nội dung bài đăng, không gồm hashtag"
+            },
+            "hashtags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cta": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "post_text",
+            "hashtags",
+            "cta"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "linkedin",
+        "threads",
+        "facebook_groups",
+        "facebook_page"
+      ]
+    },
+    "poster": {
+      "type": "object",
+      "properties": {
+        "image_prompt": {
+          "type": "string"
+        },
+        "negative_notes": {
+          "type": "string"
+        },
+        "accent_color": {
+          "type": "string"
+        },
+        "panel_color": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "image_prompt",
+        "negative_notes",
+        "accent_color",
+        "panel_color"
+      ]
+    }
+  },
+  "required": [
+    "analysis",
+    "posts",
+    "poster"
+  ]
+}

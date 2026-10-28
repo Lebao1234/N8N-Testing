@@ -1,0 +1,47 @@
+{
+  "id": "exErrorHandler01",
+  "name": "[dev] error-handler",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "0b7c1a10-0000-4000-8000-000000000001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gom thông tin lỗi thành 1 bản ghi gọn để log / gửi thông báo\nconst e = $input.first().json;\nreturn [{\n  json: {\n    workflow: e.workflow?.name,\n    workflowId: e.workflow?.id,\n    executionId: e.execution?.id,\n    executionUrl: e.execution?.url,\n    lastNode: e.execution?.lastNodeExecuted,\n    message: e.execution?.error?.message ?? e.trigger?.error?.message,\n    at: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "0b7c1a10-0000-4000-8000-000000000002",
+      "name": "Format Error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "content": "## Error handler dùng chung\nCác workflow mẫu trỏ `settings.errorWorkflow` về workflow này.\n\nMở rộng: nối **Format Error** tới Slack / Telegram / Email để nhận cảnh báo.",
+        "height": 200,
+        "width": 360
+      },
+      "id": "0b7c1a10-0000-4000-8000-000000000003",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [0, -240]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [[{ "node": "Format Error", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

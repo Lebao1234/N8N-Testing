@@ -1,0 +1,80 @@
+%% Sơ đồ luồng hiện tại — [dev] jd-tuyen-dung-da-nen-tang (jdAutoPostV20001)
+%% Tạo từ jd-automation/jd-automation.v2.json ngày 2026-10-28.
+%% Mức tổng quan nằm ở docs/flow-current-overview.mermaid. File này là mức CHI TIẾT:
+%% mỗi subgraph là một nhóm (sticky note), cạnh nét liền = connection main,
+%% cạnh chấm = node phụ AI (model/parser), cạnh "-. đọc xa .->" = tham chiếu $('...') quan trọng.
+flowchart LR
+  classDef trig fill:#fde68a,stroke:#b45309,color:#111
+  classDef ai fill:#ddd6fe,stroke:#6d28d9,color:#111
+  classDef sub fill:#f3f4f6,stroke:#9ca3af,color:#374151
+  classDef ext fill:#bfdbfe,stroke:#1d4ed8,color:#111
+  classDef code fill:#fecaca,stroke:#b91c1c,color:#111
+  classDef bad fill:#fee2e2,stroke:#dc2626,stroke-width:2px,color:#111
+
+  subgraph G1["1 · Prepare job description"]
+    F["JD Input Form<br/>(Form Trigger, Basic Auth)"]:::trig --> CFG["Config<br/>(Set: spreadsheet_id, drive_folder_id…)"]
+    CFG --> GID["Generate JD ID<br/>(Crypto uuid)"]
+    GID --> ADD["Add JD Row<br/>(Sheets append, status=New)"]:::ext
+    ADD --> SP["Set Processing<br/>(Sheets update)"]:::ext
+  end
+
+  subgraph G3["3 · Analyze job description"]
+    AN["JD Analyzer<br/>(AI Agent)"]:::ai
+    M0["Claude Chat Model"]:::sub -.-> AN
+    P0["JD Analysis Parser<br/>(auto-fix)"]:::sub -.-> AN
+    M0 -.-> P0
+  end
+
+  subgraph G4["4 · Write platform posts (TUẦN TỰ)"]
+    LI["LinkedIn Writer"]:::ai --> TH["Threads Writer"]:::ai --> FG["Facebook Groups Writer"]:::ai --> FP["Facebook Page Writer"]:::ai
+    M1["LinkedIn Model + Parser"]:::sub -.-> LI
+    M2["Threads Model + Parser"]:::sub -.-> TH
+    M3["Facebook Groups Model + Parser"]:::sub -.-> FG
+    M4["Facebook Page Model + Parser"]:::sub -.-> FP
+  end
+
+  subgraph G5["5 · Plan poster"]
+    PCS["Poster Content Selector<br/>(Set, bỏ qua $json)"] --> VSS["Visual Style Selector<br/>(Set, bảng ngành→màu)"] --> IPB["Image Prompt Builder<br/>(LLM Chain)"]:::ai
+    M5["Image Prompt + Image Prompt Parser"]:::sub -.-> IPB
+  end
+
+  subgraph G6["6 · Create poster"]
+    RLF["Read Logo File<br/>(continueRegularOutput)"] --> HL{"Has Logo"}
+    HL -- true --> AL["Attach Logo<br/>(Code)"]:::code --> GIL["Generate Image With Logo<br/>(OpenAI edit)"]:::ext
+    HL -- false --> GI["Generate Image<br/>(OpenAI generate)"]:::ext
+    GIL --> TOE{"Text Overlay Enabled?"}
+    GI --> TOE
+    TOE -- true --> OPT["Overlay Poster Text<br/>(Edit Image, multiStep)"]
+    TOE -- false --> UP
+    OPT --> UP["Upload to Drive"]:::ext --> SH["Share Anyone With Link<br/>(reader / anyone)"]:::ext
+  end
+
+  subgraph G7["7 · Validate and save"]
+    CPQ["Check Posts Quality<br/>(Code, đọc xa 7 node)"]:::code --> APV{"All Posts Valid"}
+    APV -- true --> BR["Build Rows<br/>(Code, 1→4 item)"]:::code --> AP["Append to Posts<br/>(Sheets, Draft)"]:::ext --> SD["Set Done<br/>(Sheets, executeOnce)"]:::ext
+    APV -- false --> CR{"Can Retry?<br/>attempt nhỏ hơn 1"}
+    CR -- true --> PR["Prepare Rewrite<br/>(Code, 1 item/bài lỗi)"]:::code --> RFP["Rewrite Failed Post<br/>(LLM Chain)"]:::ai --> MRP["Merge Rewritten Posts<br/>(Code)"]:::code
+    MRP == "VÒNG NGƯỢC (attempt=1)" ==> CPQ
+    CR -- false --> SVF["Set Validation Failed<br/>(Sheets, KHÔNG lưu bài)"]:::bad
+    M6["Rewrite Model + Rewrite Parser"]:::sub -.-> RFP
+  end
+
+  subgraph G2["2 · Flag failed job (Error Workflow = chính workflow này)"]
+    ET["Error Trigger<br/>(chỉ execution production)"]:::trig --> EC["Error Config<br/>(spreadsheet_id bản sao 2)"]
+    EC --> FPJ["Find Processing JD<br/>(status=Processing AND execution_id)"]:::ext --> SE["Set Error<br/>(Sheets update)"]:::ext
+  end
+
+  SP --> AN
+  AN --> LI
+  FP --> PCS
+  IPB --> RLF
+  SH --> CPQ
+
+  %% Tham chiếu xa tiêu biểu (không phải connection)
+  GID -. "đọc xa ×16" .-> CPQ
+  AN -. "đọc xa ×15" .-> PCS
+  CFG -. "đọc xa ×15" .-> OPT
+  LI -. "đọc xa" .-> CPQ
+
+  %% Mọi node lỗi (trừ Read Logo File) → dừng execution → Error Trigger
+  SE ~~~ F

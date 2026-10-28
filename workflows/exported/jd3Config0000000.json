@@ -1,0 +1,317 @@
+{
+  "updatedAt": "2026-10-28T04:48:33.998Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3Config0000000",
+  "name": "[dev] jd-config",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        300
+      ],
+      "id": "eac490ee-d30b-a52c-6dfc-c42123b1a6a5",
+      "name": "[Config] When called"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6143c650-f427-4631-4032-869d7b685d90",
+              "name": "spreadsheet_id",
+              "value": "REPLACE_WITH_SPREADSHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "6f7c7fb9-e59f-fd65-c117-371ce6e780a9",
+              "name": "drive_folder_id",
+              "value": "REPLACE_WITH_DRIVE_FOLDER_ID",
+              "type": "string"
+            },
+            {
+              "id": "afd743d0-0828-9b14-69ee-2ea04dd77d6b",
+              "name": "logo_path",
+              "value": "/files/jd-automation/logo.png",
+              "type": "string"
+            },
+            {
+              "id": "f385bafa-9be6-6e46-5077-562830d8bfe7",
+              "name": "enable_text_overlay",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "66db449e-d58d-6678-f59c-a527f5b2c2ab",
+              "name": "image_model",
+              "value": "gpt-image-1",
+              "type": "string"
+            },
+            {
+              "id": "4e895e5a-6cc4-621e-5fe9-258aceeb0dc7",
+              "name": "overlay_font",
+              "value": "/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf",
+              "type": "string"
+            },
+            {
+              "id": "71006a95-4615-e095-dbb7-652e2ed3dca9",
+              "name": "poster_share_mode",
+              "value": "private",
+              "type": "string"
+            },
+            {
+              "id": "61cba8da-7ec2-3881-1459-437cfdf2a516",
+              "name": "n8n_base_url",
+              "value": "http://localhost:5678",
+              "type": "string"
+            },
+            {
+              "id": "d4d81f2d-fe03-871c-ad50-f366820931be",
+              "name": "notify_channel",
+              "value": "none",
+              "type": "string"
+            },
+            {
+              "id": "a9d233d3-f510-e5ce-324d-db7ef1b68918",
+              "name": "telegram_chat_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "eb37dfa9-f773-61f4-396a-fc67c7cae24c",
+              "name": "dry_run",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "fe5e8d8f-789e-ca87-40ee-fd1aa1030dac",
+              "name": "enable_linkedin",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "2de9ef8f-0619-9385-09fa-9a8cf4efe3ee",
+              "name": "enable_threads",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "4ffe57f0-4156-68ca-2d1c-2ba0b963ae67",
+              "name": "enable_facebook_page",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "8a13e969-7f06-817e-2204-631542903c78",
+              "name": "enable_facebook_groups",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "af85d116-1121-c681-e86c-ca55084130ad",
+              "name": "linkedin_person_id",
+              "value": "REPLACE_WITH_LINKEDIN_PERSON_ID",
+              "type": "string"
+            },
+            {
+              "id": "c9e9cba9-4e4b-65c6-5244-274c0ce3cb86",
+              "name": "facebook_page_id",
+              "value": "REPLACE_WITH_FACEBOOK_PAGE_ID",
+              "type": "string"
+            },
+            {
+              "id": "c3aac137-89e0-1d1e-67c9-0af50af5c57b",
+              "name": "facebook_graph_version",
+              "value": "v25.0",
+              "type": "string"
+            },
+            {
+              "id": "a1a726b6-5ba9-bb38-82c2-39f113ad319c",
+              "name": "threads_api_base",
+              "value": "https://graph.threads.com/v1.0",
+              "type": "string"
+            },
+            {
+              "id": "154857b4-ffa5-f20d-3e62-1110c42dd64a",
+              "name": "threads_user_id",
+              "value": "me",
+              "type": "string"
+            },
+            {
+              "id": "57cf0755-70f5-7958-2025-26b510ab7118",
+              "name": "threads_image_mode",
+              "value": "text_only",
+              "type": "string"
+            },
+            {
+              "id": "69352216-acac-23fc-b634-5f39f236a63b",
+              "name": "threads_image_url_template",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "e747b75e-916c-650e-e99e-f6363d905b20",
+              "name": "threads_wait_seconds",
+              "value": 30,
+              "type": "number"
+            },
+            {
+              "id": "1fba4258-26ac-4743-834f-c9fecfd99b74",
+              "name": "facebook_group_links",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "e8a35e21-7d19-88d6-f6af-10dfc49529fa",
+              "name": "min_gap_minutes_linkedin",
+              "value": 120,
+              "type": "number"
+            },
+            {
+              "id": "64da17e5-ab09-100c-83c7-84e33521bcfa",
+              "name": "min_gap_minutes_threads",
+              "value": 60,
+              "type": "number"
+            },
+            {
+              "id": "5d688b2a-aabe-cbd4-ef6b-85558a1884da",
+              "name": "min_gap_minutes_facebook_page",
+              "value": 120,
+              "type": "number"
+            },
+            {
+              "id": "1a93a68c-ec13-872c-1bed-3afadac59b8f",
+              "name": "random_wait_max_seconds",
+              "value": 20,
+              "type": "number"
+            },
+            {
+              "id": "4f471ea2-c5a6-20a0-b1c8-54afec0fe7d6",
+              "name": "max_publish_retries",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "5b93f3c3-8239-ca39-417e-2342d93d4741",
+              "name": "retry_backoff_minutes",
+              "value": 15,
+              "type": "number"
+            },
+            {
+              "id": "58e4b5fc-050f-0cd7-f271-fb80145e0c3d",
+              "name": "token_warn_days",
+              "value": 7,
+              "type": "number"
+            },
+            {
+              "id": "2da748e7-be3a-c396-857f-6ca345c6af13",
+              "name": "threads_refresh_before_days",
+              "value": 15,
+              "type": "number"
+            },
+            {
+              "id": "0391a7d7-07e9-fd92-ca9c-e701c753528a",
+              "name": "threads_credential_id",
+              "value": "REPLACE_WITH_THREADS_CREDENTIAL_ID",
+              "type": "string"
+            },
+            {
+              "id": "1abaabec-f4ab-2fd1-0022-af5719879292",
+              "name": "n8n_internal_url",
+              "value": "http://localhost:5678",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ],
+      "id": "1a7238c0-7831-a222-bf18-99c0fcd5babb",
+      "name": "[Config] Return config"
+    },
+    {
+      "parameters": {
+        "content": "## jd-config\n**Input:** bất kỳ item nào. **Output:** item đó + toàn bộ khoá cấu hình.\nĐây là nơi DUY NHẤT sửa cấu hình (Sheet, Drive, DRY_RUN, ID Page/LinkedIn…).\n**Lỗi thường gặp:** quên thay `REPLACE_WITH_…`.",
+        "height": 220,
+        "width": 560,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        40
+      ],
+      "id": "f500e148-2cd3-af2b-ea5d-020b3fdbc2dc",
+      "name": "[Config] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Config] When called": {
+      "main": [
+        [
+          {
+            "node": "[Config] Return config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "b29e979e-af2a-420f-b42b-a11924f83196",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3Config0000000",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

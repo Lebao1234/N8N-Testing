@@ -1,0 +1,8 @@
+{
+  "id": "ollamaLocal00001",
+  "name": "Ollama local",
+  "type": "ollamaApi",
+  "data": {
+    "baseUrl": "http://ollama:11434"
+  }
+}

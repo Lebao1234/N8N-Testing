@@ -1,0 +1,236 @@
+{
+  "id": "exRagQdrantOll01",
+  "name": "[dev] rag-qdrant-ollama",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "4d4d4d4d-0000-4000-8000-000000000001",
+      "name": "Run Ingest",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Tài liệu mẫu — thay bằng Read Files (/files/...), Google Drive, Notion...\nconst docs = [\n  { title: 'Chính sách đổi trả', text: 'Khách hàng được đổi trả sản phẩm trong vòng 7 ngày kể từ ngày nhận hàng nếu sản phẩm còn nguyên tem, chưa qua sử dụng. Thực phẩm đã mở bao bì không được đổi trả.' },\n  { title: 'Phí vận chuyển', text: 'Miễn phí vận chuyển cho đơn hàng từ 500.000 đồng trong nội thành TP.HCM và Hà Nội. Đơn dưới 500.000 đồng phí ship 30.000 đồng. Các tỉnh khác phí ship 45.000 đồng.' },\n  { title: 'Giờ làm việc', text: 'Cửa hàng mở cửa từ 8h00 đến 21h00 tất cả các ngày trong tuần, kể cả cuối tuần. Hotline hỗ trợ 1900 1234 hoạt động từ 8h00 đến 18h00.' },\n  { title: 'Thanh toán', text: 'Hỗ trợ thanh toán COD, chuyển khoản ngân hàng, ví MoMo và ZaloPay. Đơn hàng trên 2 triệu đồng bắt buộc chuyển khoản trước 30%.' }\n];\nreturn docs.map(d => ({ json: d }));"
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000002",
+      "name": "Sample Documents",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "kb_demo",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000003",
+      "name": "Qdrant Insert",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.1,
+      "position": [460, 0],
+      "credentials": {
+        "qdrantApi": {
+          "id": "qdrantLocal00001",
+          "name": "Qdrant local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000004",
+      "name": "Embeddings Ollama (ingest)",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [400, 220],
+      "credentials": {
+        "ollamaApi": {
+          "id": "ollamaLocal00001",
+          "name": "Ollama local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.title + '\\n' + $json.text }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              { "name": "title", "value": "={{ $json.title }}" }
+            ]
+          }
+        }
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000005",
+      "name": "Default Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [580, 220]
+    },
+    {
+      "parameters": {
+        "chunkSize": 500,
+        "chunkOverlap": 50,
+        "options": {}
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000006",
+      "name": "Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [660, 400]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000007",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 640],
+      "webhookId": "9e2a4c6b-1d3f-4a5b-8c7d-0e1f2a3b4c02"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "Bạn là nhân viên chăm sóc khách hàng, trả lời bằng tiếng Việt. Luôn dùng công cụ kb_cua_hang để tra cứu chính sách trước khi trả lời. Chỉ trả lời dựa trên thông tin tìm được; nếu không có, hãy nói chưa có thông tin và đề nghị gọi hotline."
+        }
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000008",
+      "name": "RAG Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [260, 640]
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000009",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [100, 860],
+      "credentials": {
+        "ollamaApi": {
+          "id": "ollamaLocal00001",
+          "name": "Ollama local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 6
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000010",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [260, 860]
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "kb_cua_hang",
+        "toolDescription": "Tìm kiếm trong kho kiến thức của cửa hàng: chính sách đổi trả, phí vận chuyển, giờ làm việc, phương thức thanh toán.",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "kb_demo",
+          "mode": "id"
+        },
+        "topK": 3,
+        "options": {}
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000011",
+      "name": "Qdrant Retrieve Tool",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.1,
+      "position": [440, 860],
+      "credentials": {
+        "qdrantApi": {
+          "id": "qdrantLocal00001",
+          "name": "Qdrant local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "nomic-embed-text:latest"
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000012",
+      "name": "Embeddings Ollama (query)",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [480, 1060],
+      "credentials": {
+        "ollamaApi": {
+          "id": "ollamaLocal00001",
+          "name": "Ollama local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## RAG: Qdrant + Ollama embeddings\n**Bước 1 – Ingest** (nhánh trên): bấm *Execute workflow* trên **Run Ingest**.\n- **Sample Documents**: 4 đoạn chính sách mẫu.\n- **Default Data Loader** + **Text Splitter**: biến text thành document, chia chunk 500 ký tự.\n- **Embeddings Ollama**: vector hoá bằng `nomic-embed-text` (768 chiều).\n- **Qdrant Insert**: ghi vào collection `kb_demo` tại `http://qdrant:6333`.\n\n**Bước 2 – Hỏi đáp** (nhánh dưới): *Open chat*, hỏi *\"Đơn 300k ship về Đà Nẵng mất bao nhiêu?\"*\n- **Qdrant Retrieve Tool**: Agent tự gọi để lấy top-3 đoạn liên quan.\n\nLưu ý: chạy Ingest nhiều lần sẽ nhân bản dữ liệu — xoá collection ở http://localhost:6333/dashboard nếu cần.",
+        "height": 460,
+        "width": 620
+      },
+      "id": "4d4d4d4d-0000-4000-8000-000000000013",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-700, 0]
+    }
+  ],
+  "connections": {
+    "Run Ingest": {
+      "main": [[{ "node": "Sample Documents", "type": "main", "index": 0 }]]
+    },
+    "Sample Documents": {
+      "main": [[{ "node": "Qdrant Insert", "type": "main", "index": 0 }]]
+    },
+    "Embeddings Ollama (ingest)": {
+      "ai_embedding": [[{ "node": "Qdrant Insert", "type": "ai_embedding", "index": 0 }]]
+    },
+    "Default Data Loader": {
+      "ai_document": [[{ "node": "Qdrant Insert", "type": "ai_document", "index": 0 }]]
+    },
+    "Text Splitter": {
+      "ai_textSplitter": [[{ "node": "Default Data Loader", "type": "ai_textSplitter", "index": 0 }]]
+    },
+    "When chat message received": {
+      "main": [[{ "node": "RAG Agent", "type": "main", "index": 0 }]]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [[{ "node": "RAG Agent", "type": "ai_languageModel", "index": 0 }]]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [[{ "node": "RAG Agent", "type": "ai_memory", "index": 0 }]]
+    },
+    "Qdrant Retrieve Tool": {
+      "ai_tool": [[{ "node": "RAG Agent", "type": "ai_tool", "index": 0 }]]
+    },
+    "Embeddings Ollama (query)": {
+      "ai_embedding": [[{ "node": "Qdrant Retrieve Tool", "type": "ai_embedding", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "exErrorHandler01"
+  },
+  "pinData": {},
+  "tags": []
+}

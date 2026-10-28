@@ -1,0 +1,575 @@
+{
+  "updatedAt": "2026-10-28T04:48:57.833Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3ErrorHandler0",
+  "name": "[dev] jd-99-error-handler",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "id": "011ad205-3b57-9963-c16c-154fc05eacb0",
+      "name": "[Error] Error Trigger"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3Config0000000",
+          "cachedResultName": "[dev] jd-config"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        220,
+        300
+      ],
+      "id": "76ddb3df-e375-4889-86f3-01b952dd971d",
+      "name": "[Error] Load config"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6e1c60aa-8caa-a02c-a4a9-1a513a30fa57",
+              "name": "error_text",
+              "value": "={{ String($json.execution?.error?.message ?? 'Lỗi không xác định').replace(/(access_token|token|key|secret|password|client_secret)=([^&\\s\"']+)/gi, '$1=***').replace(/Bearer\\s+[\\w.~+\\/-]+=*/gi, 'Bearer ***').slice(0, 500) }}",
+              "type": "string"
+            },
+            {
+              "id": "f47edcc3-2d68-8c16-1fd4-c5e567f4e12e",
+              "name": "failed_node",
+              "value": "={{ $json.execution?.lastNodeExecuted ?? 'không rõ' }}",
+              "type": "string"
+            },
+            {
+              "id": "b2b5e2af-1ed5-a43e-0ce9-a628331ad19a",
+              "name": "exec_ref",
+              "value": "={{ 'exec-' + ($json.execution?.id ?? 'none') }}",
+              "type": "string"
+            },
+            {
+              "id": "e2406b29-c25d-8040-82ca-f3495af06c80",
+              "name": "execution_url",
+              "value": "={{ $json.execution?.url ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5732fc08-c929-8f3c-27ef-01b8c0ce45bf",
+              "name": "workflow_name",
+              "value": "={{ $json.workflow?.name ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "76e20461-852c-f8e6-dd65-4895524c66c2",
+              "name": "is_publish",
+              "value": "={{ [\"jd3Publish000000\"].includes($json.workflow?.id) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "ca42978e-827e-108f-9cad-6a7faa437c91",
+              "name": "is_top_level",
+              "value": "={{ [\"jd3Main000000000\",\"jd3Publish000000\",\"jd3TokenHealth00\"].includes($json.workflow?.id) }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        300
+      ],
+      "id": "5308ee64-1c75-b3fa-1f83-aa29a78c5b8e",
+      "name": "[Error] Sanitize error"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7f0a7925-bc91-e917-26ae-872c4c63dc59",
+              "leftValue": "={{ $json.is_publish }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        200
+      ],
+      "id": "22519bd5-510b-55a3-554e-f31d6441c146",
+      "name": "[Error] Is publish workflow?"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "execution_id",
+              "lookupValue": "={{ $json.exec_ref }}"
+            },
+            {
+              "lookupColumn": "status",
+              "lookupValue": "Publishing"
+            }
+          ]
+        },
+        "combineFilters": "AND",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        100
+      ],
+      "id": "7db6309e-8899-23e1-9cae-172d3dcc2a43",
+      "name": "[Error] Find publishing posts",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Error] Sanitize error').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "post_key": "={{ $json.post_key }}",
+            "status": "Failed",
+            "error_message": "={{ 'Workflow lỗi: ' + $('[Error] Sanitize error').first().json.error_text + ' | Node lỗi: ' + $('[Error] Sanitize error').first().json.failed_node }}"
+          },
+          "matchingColumns": [
+            "post_key"
+          ],
+          "schema": [
+            {
+              "id": "post_key",
+              "displayName": "post_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1100,
+        100
+      ],
+      "id": "b0db6251-3d3f-6c1b-8714-22310c7613ae",
+      "name": "[Error] Mark posts failed",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "execution_id",
+              "lookupValue": "={{ $json.exec_ref }}"
+            }
+          ]
+        },
+        "combineFilters": "AND",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        300
+      ],
+      "id": "33011757-dea7-d067-9a3a-19f1c4141eab",
+      "name": "[Error] Find JD by execution",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Error] Sanitize error').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.jd_id }}",
+            "status": "Error",
+            "error_message": "={{ $('[Error] Sanitize error').first().json.error_text + ' | Node lỗi: ' + $('[Error] Sanitize error').first().json.failed_node }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1100,
+        300
+      ],
+      "id": "59263817-7533-7bee-ade9-9ab579ed6de7",
+      "name": "[Error] Mark JD error",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e6e02126-caf1-5561-6a3a-127500ad05fe",
+              "leftValue": "={{ $json.is_top_level }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "6c916429-8ea0-5828-fefe-a070774f5647",
+              "leftValue": "={{ $json.notify_channel }}",
+              "rightValue": "telegram",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        500
+      ],
+      "id": "dba08fd2-1999-a105-32b4-fe4bd4315344",
+      "name": "[Error] Should notify?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.telegram_chat_id }}",
+        "text": "=🚨 {{ $json.workflow_name }} lỗi\nNode: {{ $json.failed_node }}\nLý do: {{ $json.error_text }}\n{{ $json.execution_url }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        500
+      ],
+      "id": "86657b13-1554-f6d9-9216-66b1314f272b",
+      "name": "[Error] Notify via Telegram",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 99 · Error handler (dùng chung)\n**Input:** execution lỗi (production). **Output:** JD → `Error` (lọc CHỈ theo `execution_id`) hoặc Posts `Publishing` → `Failed`; báo Telegram (đã che token).\nLưu ý: chỉ chạy với execution production — test tay trong editor không kích hoạt.",
+        "height": 140,
+        "width": 1300,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -60
+      ],
+      "id": "036f93a4-1508-5ea0-611b-c93af4f5c9fd",
+      "name": "[Error] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Error] Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "[Error] Load config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Error] Load config": {
+      "main": [
+        [
+          {
+            "node": "[Error] Sanitize error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Error] Sanitize error": {
+      "main": [
+        [
+          {
+            "node": "[Error] Is publish workflow?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[Error] Should notify?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Error] Is publish workflow?": {
+      "main": [
+        [
+          {
+            "node": "[Error] Find publishing posts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Error] Find JD by execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Error] Find publishing posts": {
+      "main": [
+        [
+          {
+            "node": "[Error] Mark posts failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Error] Find JD by execution": {
+      "main": [
+        [
+          {
+            "node": "[Error] Mark JD error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Error] Should notify?": {
+      "main": [
+        [
+          {
+            "node": "[Error] Notify via Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "565ba0b3-8646-4b44-b175-605b8dcb7d3d",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3ErrorHandler0",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

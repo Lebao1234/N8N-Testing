@@ -1,0 +1,140 @@
+{
+  "updatedAt": "2026-10-28T03:27:59.627Z",
+  "createdAt": "2026-10-28T03:19:22.708Z",
+  "id": "WeEdSnus6TYkjOHR",
+  "name": "My workflow",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "n8nUserAuth",
+        "requireExecuteAccess": true,
+        "formTitle": "Thông Tin JD Công Việc",
+        "formDescription": "Vui lòng điền đầy đủ thông tin tuyển dụng bên dưới để hệ thống tiếp nhận và xử lý.\n\n• Tên Công Ty: tên đầy đủ của doanh nghiệp tuyển dụng\n• Vị Trí: chức danh cần tuyển (ví dụ: Nhân viên Marketing)\n• Chi Tiết JD: mô tả công việc, yêu cầu ứng viên, quyền lợi\n• Mức Lương: ghi khoảng cụ thể (ví dụ: 15-25 triệu) hoặc \"Thỏa thuận\"\n• Liên Hệ: số điện thoại hoặc email nhận hồ sơ\n\nCác trường có dấu * là bắt buộc. Thông tin của bạn sẽ được bảo mật và chỉ dùng cho mục đích tuyển dụng.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Tên Công Ty "
+            },
+            {
+              "fieldLabel": "Vị Trí"
+            },
+            {
+              "fieldLabel": "Chi Tiết JD",
+              "fieldType": "textarea"
+            },
+            {
+              "fieldLabel": "Mức Lương"
+            },
+            {
+              "fieldLabel": "Liên Hệ"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "75605b93-692b-4282-af9c-9b6ccbac8b35",
+      "name": "On form submission",
+      "webhookId": "ab2e6532-f103-4ff8-ac41-7b1c2cffa1e7"
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "bd389a17-bfd9-465f-a473-ced3ebc6f6ab",
+      "name": "Create spreadsheet"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        0
+      ],
+      "id": "daedecbe-adfb-46e7-9f0e-9c47ea08b285",
+      "name": "AI Agent"
+    }
+  ],
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Create spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "913f0c95-404d-4b15-9590-bb4b91407750",
+  "activeVersionId": null,
+  "versionCounter": 28,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T03:19:22.708Z",
+      "createdAt": "2026-10-28T03:19:22.708Z",
+      "role": "workflow:owner",
+      "workflowId": "WeEdSnus6TYkjOHR",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

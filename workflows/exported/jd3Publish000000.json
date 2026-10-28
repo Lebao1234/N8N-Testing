@@ -1,0 +1,891 @@
+{
+  "updatedAt": "2026-10-28T04:34:02.891Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3Publish000000",
+  "name": "[dev] jd-05-publish",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "id": "0efd8798-59b2-1c33-5f42-ba7e0edbdfab",
+      "name": "[Publish] Every 5 minutes"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "id": "4cf2423b-8165-6381-bef8-58929a9a95eb",
+      "name": "[Publish] Run manually"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jd-publish-one",
+        "authentication": "basicAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        600
+      ],
+      "id": "3d8b29e7-87e0-1a7e-85f3-bfed2a0d746f",
+      "name": "[Publish] Webhook publish one",
+      "webhookId": "64c5d30b-89dc-e5a2-a48e-64bb513e45fe",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "CLtFsk0dNV90Z52V",
+          "name": "Unnamed credential"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e97fce8-62c8-4484-d2c5-1fa6a7f2fc9d",
+              "name": "only_post_key",
+              "value": "={{ $json.body?.post_key ?? '' }}",
+              "type": "string"
+            },
+            {
+              "id": "f229b318-8f24-79eb-af4b-6c7f2a1f0fb9",
+              "name": "run_started_at",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        400
+      ],
+      "id": "fa7ff2fe-aa0d-714d-c267-d61e57c105cc",
+      "name": "[Publish] Capture request"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3Config0000000",
+          "cachedResultName": "[dev] jd-config"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        460,
+        400
+      ],
+      "id": "1493af2d-e00c-1e73-5f35-791ab513d373",
+      "name": "[Publish] Load config"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        680,
+        400
+      ],
+      "id": "9bf70a3b-40fa-486e-83af-6a494997bd44",
+      "name": "[Publish] Read posts",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Chọn dòng được phép đăng: Approved (hoặc Manual - Confirmed), nền tảng đang bật, tới giờ hẹn,\n  // tôn trọng khoảng cách tối thiểu giữa 2 bài cùng nền tảng; tối đa 1 bài/nền tảng/lần chạy.\n  const cfg = $('[Publish] Load config').first().json;\n  const isTrue = (v) => v === true || String(v) === 'true';\n  const zone = 'Asia/Ho_Chi_Minh';\n  const parse = (s) => {\n    if (!s) return null;\n    const d = DateTime.fromSQL(String(s), { zone });\n    return d.isValid ? d : DateTime.fromISO(String(s), { zone });\n  };\n  const now = DateTime.now().setZone(zone);\n  const rows = $input.all().map((i) => i.json).filter((r) => r.post_key);\n  const ENABLED = { LinkedIn: cfg.enable_linkedin, Threads: cfg.enable_threads, 'Facebook Page': cfg.enable_facebook_page, 'Facebook Groups': cfg.enable_facebook_groups };\n  const GAP = { LinkedIn: cfg.min_gap_minutes_linkedin, Threads: cfg.min_gap_minutes_threads, 'Facebook Page': cfg.min_gap_minutes_facebook_page, 'Facebook Groups': 0 };\n  const last = {};\n  for (const r of rows) {\n    const p = parse(r.published_at);\n    if (p?.isValid && r.status === 'Published' && (!last[r.platform] || p > last[r.platform])) last[r.platform] = p;\n  }\n  const taken = new Set();\n  const out = [];\n  const candidates = rows\n    .filter((r) => r.status === 'Approved' || r.status === 'Manual - Confirmed')\n    .filter((r) => !cfg.only_post_key || r.post_key === cfg.only_post_key)\n    .filter((r) => isTrue(ENABLED[r.platform]))\n    .filter((r) => { const s = parse(r.scheduled_at); return !s || !s.isValid || s <= now; })\n    .sort((a, b) => String(a.scheduled_at || a.created_at).localeCompare(String(b.scheduled_at || b.created_at)));\n  for (const r of candidates) {\n    let action;\n    if (r.status === 'Manual - Confirmed') action = 'confirm_manual';\n    else if (r.platform_post_id) action = 'already_posted';\n    else if (r.platform === 'Facebook Groups') action = 'manual_handoff';\n    else {\n      if (!isTrue(cfg.dry_run)) {\n        if (taken.has(r.platform)) continue;\n        const gap = Number(GAP[r.platform] || 0);\n        if (last[r.platform] && now.diff(last[r.platform], 'minutes').minutes < gap) continue;\n        taken.add(r.platform);\n      }\n      action = 'publish';\n    }\n    out.push({ json: { ...r, action } });\n  }\n  return out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        400
+      ],
+      "id": "23b6962f-3eb0-96ec-8996-fb96e8a2170b",
+      "name": "[Publish] Pick due posts",
+      "notes": "Why Code: lọc nhiều điều kiện (trạng thái, giờ hẹn, khoảng cách tối thiểu theo nền tảng) trên toàn bộ dòng."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Publish] Load config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "post_key": "={{ $json.post_key }}",
+            "status": "Publishing",
+            "execution_id": "={{ 'exec-' + $execution.id }}"
+          },
+          "matchingColumns": [
+            "post_key"
+          ],
+          "schema": [
+            {
+              "id": "post_key",
+              "displayName": "post_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "execution_id",
+              "displayName": "execution_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        400
+      ],
+      "id": "fc167571-3ade-941b-6e02-365dea975bef",
+      "name": "[Publish] Claim posts",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1340,
+        400
+      ],
+      "id": "55352e8b-55bb-8f6d-3206-79b80b8f611b",
+      "name": "[Publish] One at a time"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8987128-3369-9af2-6928-93237d5288d4",
+              "name": "request",
+              "value": "={{ { post: $('[Publish] Pick due posts').item.json, config: $('[Publish] Load config').first().json } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1560,
+        520
+      ],
+      "id": "2453762c-2e2f-b817-edc2-6393cc3960f2",
+      "name": "[Publish] Build request"
+    },
+    {
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.request.config.dry_run ? 1 : Math.max(1, Math.floor(Math.random() * Number($json.request.config.random_wait_max_seconds || 1))) }}",
+        "unit": "seconds"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1780,
+        520
+      ],
+      "id": "46ee2e1b-2f1f-b063-e8ba-2d6d055717e4",
+      "name": "[Publish] Random wait",
+      "webhookId": "59747e42-53df-278b-b7d7-644f8feeebe1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3PublishOne000",
+          "cachedResultName": "[dev] jd-05a-publish-one"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        2000,
+        520
+      ],
+      "id": "6008303d-220c-698e-41d1-4bf1e7b81916",
+      "name": "[Publish] Run publish one",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "796f6051-d2cf-f460-0abd-980a6f8dfa97",
+              "name": "post_key",
+              "value": "={{ $('[Publish] Build request').item.json.request.post.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "26fa041b-39ab-3bc7-5556-b662c6fee2fa",
+              "name": "status",
+              "value": "Failed",
+              "type": "string"
+            },
+            {
+              "id": "1e1cd7a3-343e-a5be-4ef5-044362999b4f",
+              "name": "error_message",
+              "value": "={{ 'Sub-workflow publish-one lỗi: ' + String($json.error?.message ?? $json.error ?? 'không rõ').slice(0, 300) }}",
+              "type": "string"
+            },
+            {
+              "id": "7033c1ff-9aa0-71f7-080c-11314832bd51",
+              "name": "retry_count",
+              "value": "={{ Number($('[Publish] Build request').item.json.request.post.retry_count || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "c240c2b4-8639-763d-8128-be923978f778",
+              "name": "scheduled_at",
+              "value": "={{ $('[Publish] Build request').item.json.request.post.scheduled_at || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "2779e09d-b61e-e3e0-d26f-af2448a2ab90",
+              "name": "platform_post_id",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "fbf67820-6f9e-4e87-cb0f-62e7af1e50b3",
+              "name": "post_url",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "abdf8693-3893-0765-2671-a26d3742d392",
+              "name": "published_at",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "abfd32c5-f0fd-c1a7-fd35-0768684793cb",
+              "name": "publish_log",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2220,
+        680
+      ],
+      "id": "936e1070-9cc9-2849-d1dc-794284f21fe2",
+      "name": "[Publish] Crash result"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Publish] Load config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "post_key": "={{ $json.post_key }}",
+            "status": "={{ $json.status }}",
+            "platform_post_id": "={{ $json.platform_post_id }}",
+            "post_url": "={{ $json.post_url }}",
+            "published_at": "={{ $json.published_at }}",
+            "error_message": "={{ $json.error_message }}",
+            "retry_count": "={{ $json.retry_count }}",
+            "scheduled_at": "={{ $json.scheduled_at }}",
+            "publish_log": "={{ $json.publish_log }}"
+          },
+          "matchingColumns": [
+            "post_key"
+          ],
+          "schema": [
+            {
+              "id": "post_key",
+              "displayName": "post_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "platform_post_id",
+              "displayName": "platform_post_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "post_url",
+              "displayName": "post_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "published_at",
+              "displayName": "published_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "retry_count",
+              "displayName": "retry_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scheduled_at",
+              "displayName": "scheduled_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "publish_log",
+              "displayName": "publish_log",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2440,
+        520
+      ],
+      "id": "44d9ef95-a881-588d-f206-ba0ec5664703",
+      "name": "[Publish] Save result",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Publish] Load config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Posts",
+          "cachedResultName": "Posts"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1560,
+        260
+      ],
+      "id": "9c69e9ac-0ed7-d62d-d0a9-ec7bf5bbd539",
+      "name": "[Publish] Read posts after",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "  // JD = Published khi mọi nền tảng đã đăng; Partially Published khi mới đăng một phần.\n  const touched = new Set($('[Publish] Pick due posts').all().map((i) => i.json.jd_id));\n  const rows = $input.all().map((i) => i.json).filter((r) => touched.has(r.jd_id));\n  const DONE = ['Published', 'Published (manual)'];\n  const byJd = {};\n  for (const r of rows) (byJd[r.jd_id] ??= []).push(r);\n  return Object.entries(byJd).flatMap(([jd_id, list]) => {\n    const done = list.filter((r) => DONE.includes(r.status)).length;\n    if (!done) return [];\n    return [{ json: { jd_id, status: done === list.length ? 'Published' : 'Partially Published', step: `publish ${done}/${list.length}` } }];\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        260
+      ],
+      "id": "76232610-91ac-58d7-9263-598c0e92859a",
+      "name": "[Publish] Compute JD status",
+      "notes": "Why Code: gom nhóm dòng Posts theo jd_id để tính trạng thái tổng hợp."
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Publish] Load config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "JD",
+          "cachedResultName": "JD"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "jd_id": "={{ $json.jd_id }}",
+            "status": "={{ $json.status }}",
+            "step": "={{ $json.step }}"
+          },
+          "matchingColumns": [
+            "jd_id"
+          ],
+          "schema": [
+            {
+              "id": "jd_id",
+              "displayName": "jd_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2000,
+        260
+      ],
+      "id": "0b3dcf38-7363-20dd-f40c-6af28c79715e",
+      "name": "[Publish] Update JD status",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "content": "## 05 · Publish (poll 5 phút)\n**Input:** tab Posts. Chỉ dòng `Approved` (hoặc `Manual - Confirmed`) + nền tảng bật + tới `scheduled_at`. **Output:** cập nhật từng dòng theo `post_key`, JD → `Published`/`Partially Published`.\nChống trùng: claim `Publishing` trước khi đăng; dòng đã có `platform_post_id` bị bỏ qua. `dry_run=true` (mặc định) → không gọi API.\n**Lỗi thường gặp:** thiếu cột mới trong tab Posts; credential nền tảng chưa gán.",
+        "height": 220,
+        "width": 1300,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -60
+      ],
+      "id": "57668d55-58b0-a76e-2f33-a624c1f45ad7",
+      "name": "[Publish] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Publish] Every 5 minutes": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Capture request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Run manually": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Capture request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Webhook publish one": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Capture request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Capture request": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Load config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Load config": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Read posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Read posts": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Pick due posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Pick due posts": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Claim posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Claim posts": {
+      "main": [
+        [
+          {
+            "node": "[Publish] One at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] One at a time": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Read posts after",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Publish] Build request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Build request": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Random wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Random wait": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Run publish one",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Run publish one": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Save result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Publish] Crash result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Crash result": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Save result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Save result": {
+      "main": [
+        [
+          {
+            "node": "[Publish] One at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Read posts after": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Compute JD status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Publish] Compute JD status": {
+      "main": [
+        [
+          {
+            "node": "[Publish] Update JD status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "415a4209-0296-40d6-977e-1bf339f36def",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3Publish000000",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

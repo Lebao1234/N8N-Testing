@@ -1,0 +1,634 @@
+{
+  "id": "jd3TokenHealth00",
+  "name": "[dev] jd-06-token-health",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        200
+      ],
+      "id": "e380ab31-fa7e-7786-a66f-f0474a4fc442",
+      "name": "[Token] Every day 08:00"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "id": "2cedd55d-9c9e-d630-be22-62bc0eb61e89",
+      "name": "[Token] Run manually"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3Config0000000",
+          "cachedResultName": "[dev] jd-config"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        220,
+        300
+      ],
+      "id": "d5dafa37-f419-baf9-a2f5-ec9f8ed53b51",
+      "name": "[Token] Load config"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tokens",
+          "cachedResultName": "Tokens"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        440,
+        300
+      ],
+      "id": "4254ba26-b2be-3d43-dde5-2181587c7e5c",
+      "name": "[Token] Read token dates",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.linkedin.com/v2/userinfo",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "linkedInOAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        300
+      ],
+      "id": "0bf7a236-6f50-6f26-2e9e-c6ce54538d8e",
+      "name": "[Token] Check LinkedIn",
+      "onError": "continueRegularOutput",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('[Token] Load config').first().json.threads_api_base }}/me?fields=id,username",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        300
+      ],
+      "id": "07a8f72e-59be-48c8-e77c-9c30b12b7047",
+      "name": "[Token] Check Threads",
+      "onError": "continueRegularOutput",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://graph.facebook.com/{{ $('[Token] Load config').first().json.facebook_graph_version }}/{{ $('[Token] Load config').first().json.facebook_page_id }}?fields=id,name",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        300
+      ],
+      "id": "e6e2e1f5-3d58-868d-24f5-1d9a362e8b78",
+      "name": "[Token] Check Facebook Page",
+      "onError": "continueRegularOutput",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Tổng hợp kết quả kiểm tra token + ngày hết hạn (tab Tokens) thành danh sách cảnh báo.\n  const cfg = $('[Token] Load config').first().json;\n  const zone = 'Asia/Ho_Chi_Minh';\n  const now = DateTime.now().setZone(zone);\n  const isTrue = (v) => v === true || String(v) === 'true';\n  const tokens = $('[Token] Read token dates').all().map((i) => i.json).filter((r) => r.platform);\n  const checks = {\n    LinkedIn: [$('[Token] Check LinkedIn').first().json, cfg.enable_linkedin],\n    Threads: [$('[Token] Check Threads').first().json, cfg.enable_threads],\n    'Facebook Page': [$('[Token] Check Facebook Page').first().json, cfg.enable_facebook_page],\n  };\n  const alerts = [];\n  let threadsDaysLeft = null;\n  let threadsOk = false;\n  for (const [platform, [res, enabled]] of Object.entries(checks)) {\n    if (!isTrue(enabled)) continue;\n    const code = res.statusCode ?? (res.error ? 0 : 200);\n    if (code === 200 && platform === 'Threads') threadsOk = true;\n    if (code !== 200) alerts.push(`❌ ${platform}: kiểm tra token thất bại (HTTP ${code || 'lỗi/thiếu credential'}).`);\n    const row = tokens.find((t) => t.platform === platform);\n    if (row?.expires_at) {\n      let exp = DateTime.fromSQL(String(row.expires_at), { zone });\n      if (!exp.isValid) exp = DateTime.fromISO(String(row.expires_at), { zone });\n      if (exp.isValid) {\n        const days = Math.floor(exp.diff(now, 'days').days);\n        if (platform === 'Threads') threadsDaysLeft = days;\n        if (days <= Number(cfg.token_warn_days || 7)) alerts.push(`⚠️ ${platform}: token hết hạn sau ${days} ngày (${row.expires_at}).`);\n      }\n    } else if (platform !== 'Facebook Page') {\n      alerts.push(`ℹ️ ${platform}: chưa có expires_at trong tab Tokens — không cảnh báo trước được.`);\n    }\n  }\n  const refreshThreads = isTrue(cfg.enable_threads) && threadsOk && threadsDaysLeft !== null && threadsDaysLeft <= Number(cfg.threads_refresh_before_days || 15);\n  return [{ json: { alerts, alert_text: alerts.join('\\n'), has_alerts: alerts.length > 0, refresh_threads: refreshThreads, threads_days_left: threadsDaysLeft } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        300
+      ],
+      "id": "e5a116b5-9296-3902-37fe-94f671e88e7c",
+      "name": "[Token] Build report",
+      "notes": "Why Code: gộp 3 kết quả kiểm tra và ngày hết hạn để quyết định cảnh báo/làm mới."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "25f56821-bb72-5e66-09cb-07b4d2c21a4a",
+              "leftValue": "={{ $json.refresh_threads }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        200
+      ],
+      "id": "7e14fac1-4d01-0ca6-667a-e1fe9dab40dd",
+      "name": "[Token] Refresh Threads?"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://graph.threads.com/refresh_access_token",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "keypair",
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "th_refresh_token"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        100
+      ],
+      "id": "9fab12b5-9cd7-3ad2-890c-3e16a21713f1",
+      "name": "[Token] Refresh Threads token",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ $('[Token] Load config').first().json.n8n_internal_url }}/api/v1/credentials/{{ $('[Token] Load config').first().json.threads_credential_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ data: { name: 'access_token', value: $json.access_token } }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        100
+      ],
+      "id": "875ba41d-721e-0bbd-5ed9-edd56e2533de",
+      "name": "[Token] Save Threads token to n8n",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Token] Load config').first().json.spreadsheet_id }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tokens",
+          "cachedResultName": "Tokens"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "platform": "Threads",
+            "expires_at": "={{ $now.setZone('Asia/Ho_Chi_Minh').plus({ seconds: Number($('[Token] Refresh Threads token').first().json.expires_in || 0) }).toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "last_refreshed": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "note": "Tự làm mới bởi jd-06-token-health"
+          },
+          "matchingColumns": [
+            "platform"
+          ],
+          "schema": [
+            {
+              "id": "platform",
+              "displayName": "platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expires_at",
+              "displayName": "expires_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "last_refreshed",
+              "displayName": "last_refreshed",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "note",
+              "displayName": "note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2200,
+        100
+      ],
+      "id": "5ba85804-0e6f-19be-81a7-9ab368302dcf",
+      "name": "[Token] Record Threads expiry",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cca9b614-7875-8de6-8864-16ac212b30a5",
+              "name": "alert_text",
+              "value": "={{ '❌ Làm mới token Threads thất bại ở ' + $prevNode.name + ': ' + String($json.error?.message ?? $json.error ?? '').replace(/access_token=[^&\\s]+/gi, 'access_token=***').slice(0, 300) + '. Làm mới thủ công theo README-publish.' }}",
+              "type": "string"
+            },
+            {
+              "id": "0bdf84eb-a553-d40e-ece4-f76c13286ff8",
+              "name": "has_alerts",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2200,
+        260
+      ],
+      "id": "f43e2212-2b62-25d5-a8de-c1b33b281a62",
+      "name": "[Token] Refresh failed"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ab6e505a-894e-7a50-ac13-5f8a5e1632e3",
+              "leftValue": "={{ $json.has_alerts && $('[Token] Load config').first().json.notify_channel === 'telegram' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        420
+      ],
+      "id": "a26a5daa-c88d-9cc4-8adb-e5a0647b2346",
+      "name": "[Token] Any alerts?"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('[Token] Load config').first().json.telegram_chat_id }}",
+        "text": "=🔑 Kiểm tra token đăng bài\n{{ $json.alert_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1760,
+        420
+      ],
+      "id": "812cd7d6-6091-8df6-dc47-522e9941a9c3",
+      "name": "[Token] Send alerts",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## 06 · Token health (08:00 hằng ngày)\nKiểm tra token LinkedIn/Threads/Facebook Page, cảnh báo trước khi hết hạn (tab `Tokens`), tự làm mới token Threads (≥ 24h tuổi, chưa hết hạn) và ghi token mới vào credential qua n8n API.\nWorkflow KHÔNG lưu dữ liệu execution để token mới không nằm trong log.",
+        "height": 180,
+        "width": 1300,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -100
+      ],
+      "id": "4d4a656b-1b5c-c2df-15a0-27fc9d1f3c96",
+      "name": "[Token] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Token] Every day 08:00": {
+      "main": [
+        [
+          {
+            "node": "[Token] Load config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Run manually": {
+      "main": [
+        [
+          {
+            "node": "[Token] Load config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Load config": {
+      "main": [
+        [
+          {
+            "node": "[Token] Read token dates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Read token dates": {
+      "main": [
+        [
+          {
+            "node": "[Token] Check LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Check LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "[Token] Check Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Check Threads": {
+      "main": [
+        [
+          {
+            "node": "[Token] Check Facebook Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Check Facebook Page": {
+      "main": [
+        [
+          {
+            "node": "[Token] Build report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Build report": {
+      "main": [
+        [
+          {
+            "node": "[Token] Refresh Threads?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "[Token] Any alerts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Refresh Threads?": {
+      "main": [
+        [
+          {
+            "node": "[Token] Refresh Threads token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Refresh Threads token": {
+      "main": [
+        [
+          {
+            "node": "[Token] Save Threads token to n8n",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Token] Refresh failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Save Threads token to n8n": {
+      "main": [
+        [
+          {
+            "node": "[Token] Record Threads expiry",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Token] Refresh failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Refresh failed": {
+      "main": [
+        [
+          {
+            "node": "[Token] Any alerts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Token] Any alerts?": {
+      "main": [
+        [
+          {
+            "node": "[Token] Send alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": false,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

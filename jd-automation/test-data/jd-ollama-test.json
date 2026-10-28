@@ -1,0 +1,1620 @@
+{
+  "id": "jdTestOllama0001",
+  "name": "[test] jd-ollama-dry-run",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 0 · Trigger & cấu hình\nForm JD · lịch 5 phút · Error Trigger → `[0] Config` (sửa cấu hình DUY NHẤT ở đây) → `[0] Route` rẽ nhánh.",
+        "width": 700,
+        "height": 720,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        -50
+      ],
+      "id": "e8f52612-782c-160f-7b58-ecacad638821",
+      "name": "Khung 0 · Trigger & cấu hình"
+    },
+    {
+      "parameters": {
+        "content": "## 1 · Tạo bài (1 lần gọi Claude)\n**In:** form. **Out:** `analysis` + 4 bài + prompt poster. JD → `Processing`.\n**Lỗi:** credential Anthropic, model không tồn tại.",
+        "width": 608,
+        "height": 540,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        740,
+        -50
+      ],
+      "id": "b3ef7803-e35d-0405-4912-39e662c9deae",
+      "name": "Khung 1 · Tạo bài (1 lần gọi Claude)"
+    },
+    {
+      "parameters": {
+        "content": "## 2 · Poster (lỗi thì bỏ qua poster)\nẢnh nền OpenAI → chèn chữ tiếng Việt → Drive (private).\nLỗi ở bất kỳ bước nào → sang bước 3, bài vẫn được lưu.",
+        "width": 700,
+        "height": 360,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        -50
+      ],
+      "id": "77f60038-62e6-4bda-6a17-f864d95f287d",
+      "name": "Khung 2 · Poster (lỗi thì bỏ qua poster)"
+    },
+    {
+      "parameters": {
+        "content": "## 3 · Kiểm tra & lưu\n4 dòng Posts (upsert theo `post_key`): đạt → `Draft`, lỗi → `Needs Review` + lý do. JD → `Done`/`Needs Review`.",
+        "width": 700,
+        "height": 360,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        -50
+      ],
+      "id": "93045dec-9846-58be-9977-45ee1c4dd4d7",
+      "name": "Khung 3 · Kiểm tra & lưu"
+    },
+    {
+      "parameters": {
+        "content": "## 4 · Đăng bài (chỉ dòng Approved)\n`[4] Prepare Posts` lọc dòng Approved/tới giờ/chưa có `platform_post_id`, kiểm tra độ dài, DRY_RUN, Facebook Groups → đăng tay.\nMỗi nền tảng 1 node đăng; lỗi ghi `Failed` + lý do (đã che token) vào cùng dòng.",
+        "width": 1620,
+        "height": 900,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        740,
+        650
+      ],
+      "id": "f339f621-ec0d-76ce-e32f-d80eb5ca1412",
+      "name": "Khung 4 · Đăng bài (chỉ dòng Approved)"
+    },
+    {
+      "parameters": {
+        "content": "## 5 · Lỗi\nLỗi bất kỳ (workflow phải active) → JD `Error` + tên node lỗi.",
+        "width": 240,
+        "height": 360,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        830
+      ],
+      "id": "58b23a72-ab86-35b3-a408-cccbb3ae735d",
+      "name": "Khung 5 · Lỗi"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "id": "c7036538-bb72-80a0-49a5-c5f648ec3697",
+      "name": "[0] Every 5 minutes"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        480
+      ],
+      "id": "7a01b817-40c7-00d5-db81-337208dc8e5e",
+      "name": "[0] Error Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "230ebb91-8211-4dd9-3f18-55b597716371",
+              "name": "entry",
+              "value": "form",
+              "type": "string"
+            },
+            {
+              "id": "cdd0d4d3-41ce-53ce-8f7e-fc3f47f3aba3",
+              "name": "spreadsheet_id",
+              "value": "REPLACE_WITH_SPREADSHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "b5fb8a9a-f759-71a9-8afe-f2a0c37c5ab6",
+              "name": "drive_folder_id",
+              "value": "REPLACE_WITH_DRIVE_FOLDER_ID",
+              "type": "string"
+            },
+            {
+              "id": "fd74473a-c5e4-503a-5804-4f1a94080b29",
+              "name": "image_model",
+              "value": "gpt-image-1",
+              "type": "string"
+            },
+            {
+              "id": "b47f09a2-eb4d-af83-bc87-08d6d86d597b",
+              "name": "overlay_font",
+              "value": "/usr/share/fonts/truetype/msttcorefonts/Arial_Bold.ttf",
+              "type": "string"
+            },
+            {
+              "id": "22235b67-bf3e-66a2-27d5-fd616ba2046d",
+              "name": "dry_run",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "7e9efe58-c2a4-7386-2a41-dcf82e093d6c",
+              "name": "enable_linkedin",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "6077a162-6a16-78bf-743e-795d209b9ff9",
+              "name": "enable_threads",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "5a6d1fa1-67d3-92bb-3265-1b6af05ae86e",
+              "name": "enable_facebook_page",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "4212b627-3d5e-9924-140b-1e5ed3e4dea7",
+              "name": "enable_facebook_groups",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "7463df10-44d3-46e2-5381-9d370af2bcfc",
+              "name": "linkedin_person_id",
+              "value": "REPLACE_WITH_LINKEDIN_PERSON_ID",
+              "type": "string"
+            },
+            {
+              "id": "026b6d82-ca28-f206-9869-0f34170978cd",
+              "name": "facebook_page_id",
+              "value": "REPLACE_WITH_FACEBOOK_PAGE_ID",
+              "type": "string"
+            },
+            {
+              "id": "23fe2c35-4b83-2ac8-754a-f8140aff6153",
+              "name": "facebook_graph_version",
+              "value": "v25.0",
+              "type": "string"
+            },
+            {
+              "id": "3991e4f3-6cad-621d-f59e-471c7ce92e2f",
+              "name": "threads_user_id",
+              "value": "me",
+              "type": "string"
+            },
+            {
+              "id": "3c0a1653-60a1-35ad-28b5-b627ddc20d84",
+              "name": "min_gap_minutes",
+              "value": 60,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        230,
+        300
+      ],
+      "id": "79ecad16-f11c-57b6-398d-0dee056ef3eb",
+      "name": "[0] Config"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9d9d7d7a-c9ba-9168-140a-bd2e43e92867",
+                    "leftValue": "={{ $json.entry }}",
+                    "rightValue": "form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "form"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "94766e9e-6cc6-3d00-78c9-5b80c2127ad7",
+                    "leftValue": "={{ $json.entry }}",
+                    "rightValue": "publish",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "publish"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "bfa801ac-bb47-10f6-327f-53cfc1db5767",
+                    "leftValue": "={{ $json.entry }}",
+                    "rightValue": "error",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        460,
+        300
+      ],
+      "id": "5f88a962-d14b-e150-1e9e-83fabf1232fa",
+      "name": "[0] Route"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000000",
+              "name": "jd_id",
+              "value": "={{ 'jd-' + $execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000001",
+              "name": "created_at",
+              "value": "={{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000002",
+              "name": "company",
+              "value": "={{ $json['Tên Công Ty'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000003",
+              "name": "position",
+              "value": "={{ $json['Vị Trí'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000004",
+              "name": "jd_detail",
+              "value": "={{ $json['Chi Tiết JD'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000005",
+              "name": "salary",
+              "value": "={{ $json['Mức Lương'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000006",
+              "name": "contact",
+              "value": "={{ $json['Liên Hệ'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000007",
+              "name": "status",
+              "value": "Processing",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000008",
+              "name": "error_message",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000009",
+              "name": "poster_url",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "9cfdab50-d7a1-a224-0953-a09246000010",
+              "name": "warnings",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        120
+      ],
+      "id": "9cfdab50-d7a1-a224-0953-a09246f8d99b",
+      "name": "[1] Add JD Row",
+      "notes": "GIẢ LẬP Google Sheets: hiển thị dữ liệu sẽ ghi"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tên Công Ty: {{ $('[0] Config').first().json['Tên Công Ty'] }}\nVị Trí: {{ $('[0] Config').first().json['Vị Trí'] }}\nMức Lương (form): {{ $('[0] Config').first().json['Mức Lương'] || \"(để trống)\" }}\nLiên Hệ (form): {{ $('[0] Config').first().json['Liên Hệ'] || \"(để trống)\" }}\nChi Tiết JD:\n{{ $('[0] Config').first().json['Chi Tiết JD'] }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# NHIỆM VỤ\nBạn nhận một JD tuyển dụng và trả về MỘT đối tượng JSON gồm 3 phần: `analysis` (phân tích JD), `posts` (4 bài đăng) và `poster` (prompt ảnh nền). Làm theo đúng các quy tắc từng phần dưới đây.\n\n# PHẦN 1 — analysis\n# VAI TRÒ\nBạn là chuyên viên tuyển dụng (Talent Acquisition) giàu kinh nghiệm tại Việt Nam. Nhiệm vụ: đọc JD do người dùng nhập và chuẩn hóa thành dữ liệu có cấu trúc để các bước sau viết bài đăng và thiết kế poster.\n\n# QUY TẮC CỨNG (vi phạm = sai)\n1. CHỈ dùng thông tin có trong dữ liệu được cung cấp (Tên công ty, Vị trí, Chi tiết JD, Mức lương, Liên hệ). TUYỆT ĐỐI KHÔNG bịa, không suy đoán, không \"làm đẹp\" số liệu.\n2. Không tự tạo mức lương, địa chỉ, quyền lợi, số năm kinh nghiệm, quy mô công ty, thương hiệu, link, email, số điện thoại.\n3. Trường dạng chuỗi nào không có thông tin → ghi đúng chuỗi \"Không nêu\". Trường dạng mảng không có thông tin → mảng rỗng.\n4. Mỗi trường quan trọng bị thiếu (lương, địa điểm, hình thức làm việc, kinh nghiệm, quyền lợi, liên hệ) → thêm 1 câu cảnh báo ngắn vào `canh_bao_thieu_thong_tin`, ví dụ: \"JD không nêu mức lương\".\n5. Mức lương: ưu tiên trường \"Mức Lương\" của form; nếu trống thì lấy từ Chi tiết JD; nếu cả hai đều không có → \"Không nêu\". Chuẩn hóa dạng \"15 - 25 triệu VNĐ/tháng\", \"Thỏa thuận\", \"Upto 2.000 USD\". Không quy đổi tiền tệ, không làm tròn.\n6. `thong_tin_lien_he`: chép nguyên văn kênh liên hệ (SĐT/email/link/Zalo) từ trường Liên Hệ hoặc JD. Không có → \"Không nêu\".\n7. Toàn bộ nội dung viết bằng tiếng Việt CÓ DẤU (trừ thuật ngữ chuyên môn/tên riêng).\n\n# HƯỚNG DẪN TỪNG TRƯỜNG\n- `job_title_chuan`: chức danh chuẩn, ngắn gọn (ví dụ \"Kỹ sư Backend (Java)\"), không kèm lương/địa điểm.\n- `nganh_nghe`: một nhóm ngành ngắn, chọn gần nhất trong: \"Công nghệ thông tin\", \"F&B\", \"Tài chính - Ngân hàng\", \"Bán lẻ\", \"Sản xuất\", \"Giáo dục\", \"Y tế\", \"Marketing - Truyền thông\", \"Logistics\", \"Bất động sản\", \"Khác\".\n- `cap_bac`: Thực tập sinh / Nhân viên / Chuyên viên / Trưởng nhóm / Quản lý / Giám đốc / \"Không nêu\".\n- `dia_diem`, `hinh_thuc_lam_viec` (Toàn thời gian / Bán thời gian / Remote / Hybrid / ...), `kinh_nghiem_yeu_cau`: lấy từ JD.\n- `ky_nang_chinh`: 3-8 kỹ năng quan trọng nhất có trong JD.\n- `quyen_loi_noi_bat`: tối đa 6 quyền lợi có trong JD, viết ngắn.\n- `diem_hap_dan`: ĐÚNG tối đa 3 ý hấp dẫn nhất (mỗi ý ≤ 60 ký tự), rút từ JD; nếu JD nghèo thông tin có thể ít hơn 3, không bịa.\n- `doi_tuong_ung_vien`: 1 câu mô tả ứng viên phù hợp.\n- `tu_khoa_hashtag`: 5-8 từ khóa dạng hashtag tiếng Việt không dấu hoặc tiếng Anh, bắt đầu bằng \"#\", không khoảng trắng (ví dụ \"#TuyenDung\", \"#Java\").\n- `giong_van_de_xuat`: 1 câu gợi ý giọng văn phù hợp ngành và cấp bậc.\n- `canh_bao_thieu_thong_tin`: danh sách cảnh báo (rỗng nếu đủ thông tin).\n\nTrả về đúng một đối tượng JSON theo schema được yêu cầu, không thêm lời giải thích.\n\n# PHẦN 2 — posts (4 bài phải KHÁC nhau về cấu trúc và giọng; lương/liên hệ nhất quán với analysis)\n## posts.linkedin\n# VAI TRÒ\nBạn là copywriter tuyển dụng chuyên viết bài LinkedIn cho thị trường Việt Nam.\n\n# YÊU CẦU BÀI LINKEDIN\n- Giọng chuyên nghiệp, tôn trọng, tập trung giá trị nghề nghiệp và lộ trình phát triển.\n- 1-2 dòng đầu là HOOK mạnh (câu hỏi hoặc nhận định), không mở đầu bằng \"Chúng tôi đang tuyển\".\n- Cấu trúc: Hook → giới thiệu ngắn vị trí/công ty → \"Bạn sẽ làm gì\" (gạch đầu dòng) → \"Yêu cầu\" (gạch đầu dòng) → \"Quyền lợi\" (gạch đầu dòng) → lương (nếu có) → cách ứng tuyển.\n- Gạch đầu dòng dùng \"•\" hoặc \"–\". Emoji rất hạn chế (tối đa 2).\n- Tổng độ dài `post_text` TỐI ĐA 3000 ký tự (khuyến nghị 1200-2200).\n- `hashtags`: 3-5 hashtag chuyên nghiệp.\n## posts.threads\n# VAI TRÒ\nBạn viết bài Threads tuyển dụng — ngắn, gần gũi, như một người đang kể chuyện với bạn bè.\n\n# YÊU CẦU BÀI THREADS\n- `post_text` TỐI ĐA 500 ký tự (tính cả xuống dòng). Khuyến nghị 250-450.\n- Giọng thân mật, câu ngắn, có thể dùng 1-2 emoji. Không dùng gạch đầu dòng dài; tối đa 3 ý nổi bật.\n- Mở đầu bằng 1 câu bắt trend/đặt vấn đề, KHÁC hẳn hook của LinkedIn.\n- Phải có: vị trí, tên công ty, lương (chỉ khi có), cách liên hệ.\n- `hashtags`: 0-2 hashtag.\n## posts.facebook_groups\n# VAI TRÒ\nBạn là thành viên tích cực trong các group việc làm trên Facebook, viết bài tuyển dụng hợp \"luật group\".\n\n# YÊU CẦU BÀI FACEBOOK GROUPS\n- Giọng cộng đồng, chân thành, dễ đọc trên điện thoại; mỗi đoạn 1-3 dòng.\n- Dòng đầu là tiêu đề viết HOA gồm chữ \"TUYỂN\", tên vị trí, tên công ty và địa điểm (nếu JD có), ví dụ: \"🔥 HÀ NỘI – TUYỂN KẾ TOÁN TỔNG HỢP – CÔNG TY ABC\". Không dùng ngoặc vuông.\n- Emoji vừa phải (4-8 emoji, làm icon đầu dòng như 📍 💰 ✅ 📩).\n- Liệt kê ngắn: địa điểm, hình thức, lương (chỉ khi có), yêu cầu chính, quyền lợi chính.\n- Kết bài nhắc ứng viên liên hệ QUA ĐÚNG KÊNH trong JD (`thong_tin_lien_he`); nếu \"Không nêu\" thì mời \"để lại bình luận/inbox\".\n- KHÔNG giống bài Facebook Page: không dùng giọng thương hiệu \"Chúng tôi tự hào...\", không CTA kiểu quảng cáo.\n- Tối đa khoảng 1500 ký tự. `hashtags`: 2-4 hashtag.\n## posts.facebook_page\n# VAI TRÒ\nBạn là người quản lý fanpage thương hiệu tuyển dụng (Employer Branding) của công ty.\n\n# YÊU CẦU BÀI FACEBOOK PAGE\n- Giọng thương hiệu: tự tin, ấm áp, thể hiện văn hóa và giá trị công ty (chỉ dựa trên dữ liệu JD, không bịa văn hóa/giải thưởng).\n- Cấu trúc: câu mở đầu truyền cảm hứng → vì sao vị trí này đáng giá (dựa `diem_hap_dan`) → bạn là người phù hợp nếu... → quyền lợi → lương (chỉ khi có) → CTA rõ ràng.\n- CTA rõ, có động từ mạnh (\"Gửi CV ngay hôm nay qua ...\", \"Nhắn tin cho Page để ...\") và dùng đúng kênh liên hệ trong JD.\n- Emoji 2-5, tinh tế. Tối đa khoảng 2000 ký tự.\n- Phải khác bài Facebook Groups về cấu trúc và giọng điệu.\n- `hashtags`: 3-5 hashtag (có thể gồm hashtag tên công ty viết liền không dấu).\n# QUY TẮC CHUNG CHO MỌI BÀI ĐĂNG\n- Viết tiếng Việt CÓ DẤU, tự nhiên, đúng chính tả.\n- Chỉ dùng dữ liệu trong \"Dữ liệu JD đã phân tích\". KHÔNG bịa lương, địa chỉ, quyền lợi, số liệu, tên sếp, quy mô công ty.\n- Nếu `muc_luong_chuan_hoa` là \"Không nêu\": KHÔNG nhắc con số lương nào; có thể ghi \"Lương: Thỏa thuận/trao đổi khi phỏng vấn\" chỉ khi JD có ý đó, nếu không thì bỏ qua phần lương.\n- Nếu có lương: ghi ĐÚNG nguyên văn `muc_luong_chuan_hoa`, không làm tròn, không đổi đơn vị.\n- Nếu `thong_tin_lien_he` khác \"Không nêu\": bài phải chứa nguyên văn thông tin liên hệ đó. Nếu \"Không nêu\": mời ứng viên nhắn tin/bình luận, KHÔNG tự tạo email/SĐT/link.\n- KHÔNG để lại placeholder như {{...}}, [Tên], [Link], <...>, \"XXX\".\n- Hashtag trong `hashtags` bắt đầu bằng \"#\", không chứa khoảng trắng. Không lặp hashtag trong `post_text` nếu đã có ở `hashtags` (hệ thống sẽ tự nối).\n- `cta`: một câu kêu gọi hành động ngắn, đã nằm trong bài.\n- Nếu có \"Ghi chú sửa lỗi\" trong yêu cầu: sửa đúng các lỗi đó, giữ nguyên các phần đúng.\n\n# PHẦN 3 — poster\n# ROLE\nYou are an art director who writes prompts for an AI image model (gpt-image-1) to create a VERTICAL recruitment poster BACKGROUND, 1024x1536 (2:3 portrait).\n\n# HARD RULES\n1. Write the prompt in ENGLISH only.\n2. The image model misspells Vietnamese diacritics, so the poster must contain NO TEXT, NO letters, NO numbers, NO fake logos, NO watermarks. All Vietnamese text (job title, company, salary, highlights, contact) is overlaid later by code.\n3. Layout: the TOP ~60% (y 0-920 px) holds the visual illustration/photo scene; the BOTTOM ~40% (y 920-1536 px) must be a CLEAN, calm, low-detail area in the dark base color of the palette so white text stays readable. Also keep a small clear zone in the top-left corner (about 220x220 px) for a company logo.\n4. Use the provided palette (hex colors) and visual style exactly; describe lighting, composition, mood, camera/illustration style.\n5. Represent the job and industry with symbolic, professional, diverse imagery (people of Southeast Asian appearance when people are shown). No brand names, no copyrighted characters, no real persons.\n6. Keep it under 900 characters.\n\nReturn JSON with:\n- `image_prompt`: the full English prompt.\n- `negative_notes`: short English list of things to avoid (text, letters, watermark...).\n- `layout_notes`: short English description of the reserved text/logo zones.\n- Choose the visual style from the industry: tech = modern minimalist (navy/cyan), F&B = warm and cozy (brown/orange), finance = luxurious (navy/gold), retail = vibrant, manufacturing = industrial, education = bright, healthcare = clean (blue/teal), marketing = bold creative, logistics = dynamic, real estate = premium; otherwise clean corporate.\n- `accent_color`: a bright hex color (#RRGGBB) from that palette, readable on a dark background. `panel_color`: a very dark hex color (#RRGGBB) from that palette for the text band."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1030,
+        120
+      ],
+      "id": "4150a085-3ebc-ab27-66a4-46759e8ab2ab",
+      "name": "[1] AI Analyze & Write",
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:latest",
+        "options": {
+          "temperature": 0.3,
+          "numCtx": 16384,
+          "numPredict": 6000,
+          "format": "json"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        938,
+        300
+      ],
+      "id": "caecb10e-f192-99b0-45d5-7865302f7598",
+      "name": "[T] Ollama llama3.2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "ollamaLocal00001",
+          "name": "Ollama local"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"analysis\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"job_title_chuan\": {\n          \"type\": \"string\"\n        },\n        \"nganh_nghe\": {\n          \"type\": \"string\"\n        },\n        \"cap_bac\": {\n          \"type\": \"string\"\n        },\n        \"dia_diem\": {\n          \"type\": \"string\"\n        },\n        \"hinh_thuc_lam_viec\": {\n          \"type\": \"string\"\n        },\n        \"muc_luong_chuan_hoa\": {\n          \"type\": \"string\",\n          \"description\": \"\\\"Không nêu\\\" nếu JD không có lương\"\n        },\n        \"kinh_nghiem_yeu_cau\": {\n          \"type\": \"string\"\n        },\n        \"ky_nang_chinh\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"quyen_loi_noi_bat\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"diem_hap_dan\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          },\n          \"maxItems\": 3\n        },\n        \"doi_tuong_ung_vien\": {\n          \"type\": \"string\"\n        },\n        \"tu_khoa_hashtag\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        },\n        \"giong_van_de_xuat\": {\n          \"type\": \"string\"\n        },\n        \"thong_tin_lien_he\": {\n          \"type\": \"string\",\n          \"description\": \"\\\"Không nêu\\\" nếu không có\"\n        },\n        \"canh_bao_thieu_thong_tin\": {\n          \"type\": \"array\",\n          \"items\": {\n            \"type\": \"string\"\n          }\n        }\n      },\n      \"required\": [\n        \"job_title_chuan\",\n        \"nganh_nghe\",\n        \"cap_bac\",\n        \"dia_diem\",\n        \"hinh_thuc_lam_viec\",\n        \"muc_luong_chuan_hoa\",\n        \"kinh_nghiem_yeu_cau\",\n        \"ky_nang_chinh\",\n        \"quyen_loi_noi_bat\",\n        \"diem_hap_dan\",\n        \"doi_tuong_ung_vien\",\n        \"tu_khoa_hashtag\",\n        \"giong_van_de_xuat\",\n        \"thong_tin_lien_he\",\n        \"canh_bao_thieu_thong_tin\"\n      ],\n      \"additionalProperties\": false\n    },\n    \"posts\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"linkedin\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"post_text\": {\n              \"type\": \"string\",\n              \"description\": \"Nội dung bài đăng, không gồm hashtag\"\n            },\n            \"hashtags\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\"\n              }\n            },\n            \"cta\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"post_text\",\n            \"hashtags\",\n            \"cta\"\n          ],\n          \"additionalProperties\": false\n        },\n        \"threads\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"post_text\": {\n              \"type\": \"string\",\n              \"description\": \"Nội dung bài đăng, không gồm hashtag\"\n            },\n            \"hashtags\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\"\n              }\n            },\n            \"cta\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"post_text\",\n            \"hashtags\",\n            \"cta\"\n          ],\n          \"additionalProperties\": false\n        },\n        \"facebook_groups\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"post_text\": {\n              \"type\": \"string\",\n              \"description\": \"Nội dung bài đăng, không gồm hashtag\"\n            },\n            \"hashtags\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\"\n              }\n            },\n            \"cta\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"post_text\",\n            \"hashtags\",\n            \"cta\"\n          ],\n          \"additionalProperties\": false\n        },\n        \"facebook_page\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"post_text\": {\n              \"type\": \"string\",\n              \"description\": \"Nội dung bài đăng, không gồm hashtag\"\n            },\n            \"hashtags\": {\n              \"type\": \"array\",\n              \"items\": {\n                \"type\": \"string\"\n              }\n            },\n            \"cta\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"post_text\",\n            \"hashtags\",\n            \"cta\"\n          ],\n          \"additionalProperties\": false\n        }\n      },\n      \"required\": [\n        \"linkedin\",\n        \"threads\",\n        \"facebook_groups\",\n        \"facebook_page\"\n      ]\n    },\n    \"poster\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"image_prompt\": {\n          \"type\": \"string\"\n        },\n        \"negative_notes\": {\n          \"type\": \"string\"\n        },\n        \"accent_color\": {\n          \"type\": \"string\"\n        },\n        \"panel_color\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"image_prompt\",\n        \"negative_notes\",\n        \"accent_color\",\n        \"panel_color\"\n      ]\n    }\n  },\n  \"required\": [\n    \"analysis\",\n    \"posts\",\n    \"poster\"\n  ]\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1168,
+        300
+      ],
+      "id": "4114455d-c469-fc46-0f3b-ef309d5e2714",
+      "name": "[1] Output Parser"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "generate",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[0] Config').first().json.image_model }}"
+        },
+        "prompt": "={{ $('[1] AI Analyze & Write').first().json.output.poster.image_prompt }}\nNo text, letters or numbers. Avoid: {{ $('[1] AI Analyze & Write').first().json.output.poster.negative_notes }}",
+        "options": {
+          "size": "1024x1536",
+          "quality": "high"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1500,
+        120
+      ],
+      "id": "976d89c9-6469-ca78-6198-e0c1f4b54c9f",
+      "name": "[2] Generate Image",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiLocal00001",
+          "name": "OpenAI (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "multiStep",
+        "dataPropertyName": "data",
+        "operations": {
+          "operations": [
+            {
+              "operation": "draw",
+              "primitive": "rectangle",
+              "color": "={{ (/^#[0-9a-f]{6}$/i.test($('[1] AI Analyze & Write').first().json.output.poster.panel_color ?? '') ? $('[1] AI Analyze & Write').first().json.output.poster.panel_color : '#13293D') + '26' }}",
+              "startPositionX": 0,
+              "startPositionY": 940,
+              "endPositionX": 1024,
+              "endPositionY": 1536
+            },
+            {
+              "operation": "draw",
+              "primitive": "rectangle",
+              "color": "={{ (/^#[0-9a-f]{6}$/i.test($('[1] AI Analyze & Write').first().json.output.poster.accent_color ?? '') ? $('[1] AI Analyze & Write').first().json.output.poster.accent_color : '#56CCF2') }}",
+              "startPositionX": 72,
+              "startPositionY": 948,
+              "endPositionX": 232,
+              "endPositionY": 954
+            },
+            {
+              "operation": "text",
+              "text": "={{ (s => s.length <= 26 ? s : s.slice(0, 26).replace(/\\s+\\S*$/, '') + '…')(String($('[0] Config').first().json['Tên Công Ty'].replace(/^công ty\\s+((cổ phần|tnhh)(\\s+mtv)?\\s+)?/iu, '').toUpperCase() || '').trim()) }} TUYỂN DỤNG",
+              "fontSize": 34,
+              "fontColor": "={{ (/^#[0-9a-f]{6}$/i.test($('[1] AI Analyze & Write').first().json.output.poster.accent_color ?? '') ? $('[1] AI Analyze & Write').first().json.output.poster.accent_color : '#56CCF2') }}",
+              "positionX": 72,
+              "positionY": 1000,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 48,
+              "font": "={{ $('[0] Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ (s => s.length <= 40 ? s : s.slice(0, 40).replace(/\\s+\\S*$/, '') + '…')(String($('[1] AI Analyze & Write').first().json.output.analysis.job_title_chuan || $('[0] Config').first().json['Vị Trí'] || '').trim()) }}",
+              "fontSize": 62,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1065,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 24,
+              "font": "={{ $('[0] Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ /^\\s*(không nêu|khong neu)?\\s*$/i.test($('[1] AI Analyze & Write').first().json.output.analysis.muc_luong_chuan_hoa ?? '') ? ' ' : (s => s.length <= 40 ? s : s.slice(0, 40).replace(/\\s+\\S*$/, '') + '…')(String('Lương: ' + $('[1] AI Analyze & Write').first().json.output.analysis.muc_luong_chuan_hoa || '').trim()) }}",
+              "fontSize": 44,
+              "fontColor": "={{ (/^#[0-9a-f]{6}$/i.test($('[1] AI Analyze & Write').first().json.output.poster.accent_color ?? '') ? $('[1] AI Analyze & Write').first().json.output.poster.accent_color : '#56CCF2') }}",
+              "positionX": 72,
+              "positionY": 1230,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 36,
+              "font": "={{ $('[0] Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ ($('[1] AI Analyze & Write').first().json.output.analysis.diem_hap_dan || []).slice(0, 3).map(h => '• ' + (s => s.length <= 45 ? s : s.slice(0, 45).replace(/\\s+\\S*$/, '') + '…')(String(h || '').trim())).join('\\n') || ' ' }}",
+              "fontSize": 30,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1300,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 52,
+              "font": "={{ $('[0] Config').first().json.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ /^\\s*(không nêu|khong neu)?\\s*$/i.test($('[1] AI Analyze & Write').first().json.output.analysis.thong_tin_lien_he ?? '') ? ' ' : (s => s.length <= 52 ? s : s.slice(0, 52).replace(/\\s+\\S*$/, '') + '…')(String('Liên hệ: ' + $('[1] AI Analyze & Write').first().json.output.analysis.thong_tin_lien_he || '').trim()) }}",
+              "fontSize": 32,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1465,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 52,
+              "font": "={{ $('[0] Config').first().json.overlay_font }}"
+            }
+          ]
+        },
+        "options": {
+          "format": "png"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1.1,
+      "position": [
+        1730,
+        120
+      ],
+      "id": "d4a40af3-5e8c-c2db-d630-8d6895929f5e",
+      "name": "[2] Overlay Text",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "data",
+        "name": "=poster-jd-{{ $execution.id }}.png",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive",
+          "cachedResultName": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[0] Config').first().json.drive_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1960,
+        120
+      ],
+      "id": "ac74fc7b-1ed9-078d-88b5-f311a69fa122",
+      "name": "[2] Upload to Drive",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Kiểm tra 4 bài theo quy tắc, tạo 4 dòng Posts (post_key = jd_id|platform) + kết quả cho dòng JD.\nconst cfg = $('[0] Config').first().json;\nconst out = $('[1] AI Analyze & Write').first().json.output;\nconst a = out.analysis || {};\nconst jdId = `jd-${$execution.id}`;\n// Poster: chỉ có khi Upload thành công; lỗi ở bước 2 thì ghi lý do\nconst input = $input.first().json;\nconst poster = input.id && input.webViewLink !== undefined\n  ? { file_id: input.id, url: input.webViewLink || '', error: '' }\n  : { file_id: '', url: '', error: `Poster lỗi: ${String(input.error?.message ?? input.error ?? 'không rõ').slice(0, 200)}` };\n\nconst form = { detail: cfg['Chi Tiết JD'] || '', salary: cfg['Mức Lương'] || '', contact: cfg['Liên Hệ'] || '' };\nconst RULES = {\n  linkedin: { label: 'LinkedIn', max: 3000, minTags: 3, maxTags: 5 },\n  threads: { label: 'Threads', max: 500, minTags: 0, maxTags: 2 },\n  facebook_groups: { label: 'Facebook Groups', max: 2000, minTags: 0, maxTags: 4 },\n  facebook_page: { label: 'Facebook Page', max: 2500, minTags: 3, maxTags: 5 },\n};\nconst notStated = (v) => /^\\s*(không nêu|khong neu)?\\s*$/i.test(v ?? '');\nconst normTag = (t) => '#' + String(t).replace(/^#+/, '').replace(/\\s+/g, '');\nconst sourceNumbers = new Set(([form.detail, form.salary, form.contact].join(' ').match(/\\d+(?:[.,]\\d+)?/g) || []).map((n) => n.replace(/[.,]/g, '')));\nconst contactRaw = notStated(a.thong_tin_lien_he) ? form.contact : a.thong_tin_lien_he;\nconst contactTokens = [\n  ...(contactRaw.match(/[\\w.+-]+@[\\w-]+\\.[\\w.]+/g) || []).map((s) => s.toLowerCase()),\n  ...(contactRaw.match(/(?:https?:\\/\\/|www\\.)\\S+/g) || []).map((s) => s.toLowerCase()),\n  ...(contactRaw.match(/\\+?\\d[\\d .-]{7,}\\d/g) || []).map((s) => s.replace(/\\D/g, '')),\n];\nconst MONEY = /(\\d+(?:[.,]\\d+)?)\\s*(?:-|–|đến|tới)?\\s*(?:\\d+(?:[.,]\\d+)?)?\\s*(triệu|tr\\b|củ|nghìn|ngàn|usd|\\$|vnđ|vnd|đồng)/gi;\nconst PLACEHOLDER = /\\{\\{[^}]*\\}\\}|\\[(?:tên|ten|link|name|số điện thoại|sđt|sdt|email|công ty|vị trí|địa chỉ|mức lương)[^\\]\\n]{0,30}\\]|\\bX{3,}\\b/i;\nconst VI = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/gi;\n\nconst createdAt = $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss');\nconst summary = [];\nconst rows = Object.entries(RULES).map(([key, r]) => {\n  const p = (out.posts || {})[key] || {};\n  const text = String(p.post_text || '').trim();\n  const inText = new Set((text.match(/#[\\p{L}\\p{N}_]+/gu) || []).map((t) => t.toLowerCase()));\n  let tags = [...new Set((p.hashtags || []).map(normTag).filter((t) => t.length > 1))];\n  if (tags.length + inText.size < r.minTags) tags = [...new Set([...tags, ...(a.tu_khoa_hashtag || []).map(normTag)])];\n  tags = tags.filter((t) => !inText.has(t.toLowerCase())).slice(0, Math.max(0, r.maxTags - inText.size));\n  const full = tags.length ? `${text}\\n\\n${tags.join(' ')}` : text;\n  const errs = [];\n  if (!text) errs.push('Bài rỗng');\n  if (full.length > r.max) errs.push(`Vượt ${r.max} ký tự (${full.length})`);\n  const ph = full.match(PLACEHOLDER);\n  if (ph) errs.push(`Còn placeholder \"${ph[0]}\"`);\n  if (contactTokens.length) {\n    const lower = full.toLowerCase();\n    const digits = full.replace(/\\D/g, '');\n    if (!contactTokens.some((t) => (/^\\d+$/.test(t) ? digits.includes(t) : lower.includes(t)))) errs.push('Thiếu thông tin liên hệ có trong JD');\n  }\n  for (const m of full.matchAll(MONEY)) {\n    if ((m[0].match(/\\d+(?:[.,]\\d+)?/g) || []).some((n) => !sourceNumbers.has(n.replace(/[.,]/g, '')))) errs.push(`Số tiền không có trong JD: \"${m[0].trim()}\"`);\n  }\n  if (notStated(a.muc_luong_chuan_hoa) && [...full.matchAll(/lương([^\\n\\d]{0,25})(\\d[\\d.,]*)/gi)].some((m) => !/tháng\\s*$/i.test(m[1]))) errs.push('JD không nêu lương nhưng bài có số lương');\n  const letters = (full.match(/\\p{L}/gu) || []).length;\n  if (letters && (full.match(VI) || []).length / letters < 0.03) errs.push('Không phải tiếng Việt có dấu');\n  if (errs.length) summary.push(`${r.label}: ${errs.join('; ')}`);\n  return {\n    post_key: `${jdId}|${key}`, jd_id: jdId, platform: r.label, post_text: full, hashtags: tags.join(' '),\n    poster_url: poster.url, poster_file_id: poster.file_id,\n    status: errs.length ? 'Needs Review' : 'Draft', error_message: errs.join('; '), created_at: createdAt, retry_count: 0,\n  };\n});\nconst jd = {\n  jd_status: summary.length ? 'Needs Review' : 'Done',\n  jd_error: [summary.join(' || '), poster.error].filter(Boolean).join(' || '),\n  jd_warnings: (a.canh_bao_thieu_thong_tin || []).join('; '),\n};\nreturn rows.map((r) => ({ json: { ...r, ...jd } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2300,
+        120
+      ],
+      "id": "d3527387-0490-c05b-68f0-61a5eebe402a",
+      "name": "[3] Check & Build Rows",
+      "notes": "Why Code: nhiều quy tắc regex (lương, liên hệ, placeholder, dấu tiếng Việt) trên 4 bài và tạo 4 dòng."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000000",
+              "name": "post_key",
+              "value": "={{ $json.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000001",
+              "name": "jd_id",
+              "value": "={{ $json.jd_id }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000002",
+              "name": "platform",
+              "value": "={{ $json.platform }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000003",
+              "name": "post_text",
+              "value": "={{ $json.post_text }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000004",
+              "name": "hashtags",
+              "value": "={{ $json.hashtags }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000005",
+              "name": "poster_url",
+              "value": "={{ $json.poster_url }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000006",
+              "name": "poster_file_id",
+              "value": "={{ $json.poster_file_id }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000007",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000008",
+              "name": "error_message",
+              "value": "={{ $json.error_message }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000009",
+              "name": "created_at",
+              "value": "={{ $json.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "48ae252c-f6ea-7940-1382-03bbd8000010",
+              "name": "retry_count",
+              "value": "={{ $json.retry_count }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2530,
+        120
+      ],
+      "id": "48ae252c-f6ea-7940-1382-03bbd82e70cc",
+      "name": "[3] Save Posts",
+      "notes": "GIẢ LẬP Google Sheets: hiển thị dữ liệu sẽ ghi"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "24283e6e-d8c2-8684-97f5-38f32e000000",
+              "name": "jd_id",
+              "value": "={{ $('[3] Check & Build Rows').first().json.jd_id }}",
+              "type": "string"
+            },
+            {
+              "id": "24283e6e-d8c2-8684-97f5-38f32e000001",
+              "name": "status",
+              "value": "={{ $('[3] Check & Build Rows').first().json.jd_status }}",
+              "type": "string"
+            },
+            {
+              "id": "24283e6e-d8c2-8684-97f5-38f32e000002",
+              "name": "poster_url",
+              "value": "={{ $('[3] Check & Build Rows').first().json.poster_url }}",
+              "type": "string"
+            },
+            {
+              "id": "24283e6e-d8c2-8684-97f5-38f32e000003",
+              "name": "warnings",
+              "value": "={{ $('[3] Check & Build Rows').first().json.jd_warnings }}",
+              "type": "string"
+            },
+            {
+              "id": "24283e6e-d8c2-8684-97f5-38f32e000004",
+              "name": "error_message",
+              "value": "={{ $('[3] Check & Build Rows').first().json.jd_error }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2760,
+        120
+      ],
+      "id": "24283e6e-d8c2-8684-97f5-38f32e4e98bf",
+      "name": "[3] Set JD Result",
+      "executeOnce": true,
+      "notes": "GIẢ LẬP Google Sheets: hiển thị dữ liệu sẽ ghi"
+    },
+    {
+      "parameters": {
+        "jsCode": "// GIẢ LẬP: 4 bài vừa lưu, coi như đã được duyệt\nreturn $('[3] Check & Build Rows').all().map((i) => ({ json: { ...i.json, status: 'Approved' } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        1000
+      ],
+      "id": "0e32fc5b-f5a9-e1d9-86de-c056addb622a",
+      "name": "[4] Read Posts",
+      "waitBetweenTries": 5000,
+      "executeOnce": true,
+      "notes": "Why Code: giả lập đọc tab Posts sau khi người duyệt đổi sang Approved"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Chọn dòng được đăng và quyết định nhánh (route) cho từng dòng; dòng không cần gọi API được kết luận luôn ở đây.\nconst cfg = $('[0] Config').first().json;\nconst isTrue = (v) => v === true || String(v) === 'true';\nconst zone = 'Asia/Ho_Chi_Minh';\nconst parse = (s) => { if (!s) return null; const d = DateTime.fromSQL(String(s), { zone }); return d.isValid ? d : DateTime.fromISO(String(s), { zone }); };\nconst now = DateTime.now().setZone(zone);\nconst rows = $input.all().map((i) => i.json).filter((r) => r.post_key);\nconst ENABLED = { LinkedIn: cfg.enable_linkedin, Threads: cfg.enable_threads, 'Facebook Page': cfg.enable_facebook_page, 'Facebook Groups': cfg.enable_facebook_groups };\nconst LIMIT = { LinkedIn: 3000, Threads: 500, 'Facebook Page': 63206, 'Facebook Groups': 63206 };\n// Threads tính emoji theo số byte UTF-8\nconst enc = new TextEncoder();\nconst len = (s, platform) => (platform === 'Threads'\n  ? [...s].reduce((n, ch) => n + (/\\p{Extended_Pictographic}/u.test(ch) ? enc.encode(ch).length : 1), 0)\n  : [...s].length);\nconst last = {};\nfor (const r of rows) { const p = parse(r.published_at); if (p?.isValid && r.status === 'Published' && (!last[r.platform] || p > last[r.platform])) last[r.platform] = p; }\nconst taken = new Set();\nconst out = [];\nconst due = rows\n  .filter((r) => (r.status === 'Approved' || r.status === 'Manual - Confirmed') && isTrue(ENABLED[r.platform]))\n  .filter((r) => { const s = parse(r.scheduled_at); return !s || !s.isValid || s <= now; });\nfor (const r of due) {\n  const text = String(r.post_text || '').trim();\n  const done = (status, note, log = '') => out.push({ json: { ...r, text, route: 'done', result_status: status, note, log } });\n  if (r.status === 'Manual - Confirmed') { done('Published (manual)', 'Đã xác nhận đăng tay'); continue; }\n  if (r.platform_post_id) { done('Published', 'Bỏ qua: đã có platform_post_id (chống đăng trùng)'); continue; }\n  if (!text || len(text, r.platform) > LIMIT[r.platform]) { done('Failed', `Bài rỗng hoặc vượt ${LIMIT[r.platform]} ký tự (${len(text, r.platform)})`); continue; }\n  if (r.platform === 'Facebook Groups') { done('Manual - Waiting', 'Facebook Groups không có API: đăng tay rồi đổi status thành \"Manual - Confirmed\"'); continue; }\n  if (isTrue(cfg.dry_run)) {\n    done('Dry Run', '', `[DRY_RUN ${now.toFormat('yyyy-MM-dd HH:mm')}] ${r.platform}: sẽ đăng ${len(text, r.platform)} ký tự${r.poster_file_id ? ' + poster' : ''}. Nội dung:\\n${text}`);\n    continue;\n  }\n  // Tối đa 1 bài/nền tảng mỗi lần chạy và cách bài trước ít nhất min_gap_minutes\n  if (taken.has(r.platform) || (last[r.platform] && now.diff(last[r.platform], 'minutes').minutes < Number(cfg.min_gap_minutes || 0))) continue;\n  taken.add(r.platform);\n  const route = r.platform === 'LinkedIn' ? 'linkedin' : r.platform === 'Threads' ? 'threads' : (r.poster_file_id ? 'facebook_photo' : 'facebook_text');\n  out.push({ json: { ...r, text, route, result_status: '', note: '', log: '' } });\n}\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1030,
+        1000
+      ],
+      "id": "6f165274-3c64-8c1f-eb04-1702b7908d1a",
+      "name": "[4] Prepare Posts",
+      "notes": "Why Code: lọc dòng theo trạng thái/giờ hẹn/khoảng cách và kết luận sẵn các dòng không cần gọi API."
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ['linkedin', 'facebook_photo'].includes($json.route) ? $json.poster_file_id : '' }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1260,
+        1000
+      ],
+      "id": "9eafea4f-f610-17a1-0cdb-fa8a70715d40",
+      "name": "[4] Download Poster",
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "05eb310b-3357-f8f0-4062-ca293e4a3fc9",
+                    "leftValue": "={{ $('[4] Prepare Posts').item.json.route }}",
+                    "rightValue": "done",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "done"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "31de6930-7701-fa5c-4302-8dc49fb96397",
+                    "leftValue": "={{ $('[4] Prepare Posts').item.json.route }}",
+                    "rightValue": "linkedin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "linkedin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "7fc08c33-40ab-0dd6-0d37-c4d4eff45a2f",
+                    "leftValue": "={{ $('[4] Prepare Posts').item.json.route }}",
+                    "rightValue": "threads",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "threads"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c2be437f-3973-97f6-3ac6-735857d2a0d7",
+                    "leftValue": "={{ $('[4] Prepare Posts').item.json.route }}",
+                    "rightValue": "facebook_photo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "facebook_photo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "05c7e9f1-0429-2c41-96b1-27c1b052880b",
+                    "leftValue": "={{ $('[4] Prepare Posts').item.json.route }}",
+                    "rightValue": "facebook_text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "facebook_text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1490,
+        1000
+      ],
+      "id": "c0b702b8-ceb0-5f33-95d7-0196566e1972",
+      "name": "[4] Route by Platform"
+    },
+    {
+      "parameters": {
+        "postAs": "person",
+        "person": "={{ $('[0] Config').first().json.linkedin_person_id }}",
+        "text": "={{ $('[4] Prepare Posts').item.json.text }}",
+        "shareMediaCategory": "={{ $binary?.data ? 'IMAGE' : 'NONE' }}",
+        "binaryPropertyName": "data",
+        "additionalFields": {
+          "visibility": "PUBLIC"
+        }
+      },
+      "type": "n8n-nodes-base.linkedIn",
+      "typeVersion": 1,
+      "position": [
+        1720,
+        820
+      ],
+      "id": "04dd3291-dab7-42de-3e10-92ea55a580d2",
+      "name": "[4] Post LinkedIn",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.threads.com/v1.0/{{ $('[0] Config').first().json.threads_user_id }}/threads",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ media_type: 'TEXT', text: $('[4] Prepare Posts').item.json.text }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        1000
+      ],
+      "id": "b4a89a75-b804-0dd2-3e17-0b1d62c43271",
+      "name": "[4] Threads Create",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.threads.com/v1.0/{{ $('[0] Config').first().json.threads_user_id }}/threads_publish",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "specifyQuery": "json",
+        "jsonQuery": "={{ JSON.stringify({ creation_id: $json.id }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1950,
+        1000
+      ],
+      "id": "02d15a0a-c41b-16b0-936b-d7bbbc9b7440",
+      "name": "[4] Threads Publish",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('[0] Config').first().json.facebook_graph_version }}/{{ $('[0] Config').first().json.facebook_page_id }}/photos",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "source",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('[4] Prepare Posts').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        1180
+      ],
+      "id": "fe172dcf-19a4-e3c7-9774-4b4b7ac263d7",
+      "name": "[4] Post Facebook Photo",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('[0] Config').first().json.facebook_graph_version }}/{{ $('[0] Config').first().json.facebook_page_id }}/feed",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "facebookGraphApi",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $('[4] Prepare Posts').item.json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        1360
+      ],
+      "id": "714c9d35-7cea-8b83-278e-e7dd81bd29ba",
+      "name": "[4] Post Facebook Text",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "20eebd89-cd17-d8b9-48c8-043e84000000",
+              "name": "post_key",
+              "value": "={{ $('[4] Prepare Posts').item.json.post_key }}",
+              "type": "string"
+            },
+            {
+              "id": "20eebd89-cd17-d8b9-48c8-043e84000001",
+              "name": "status",
+              "value": "={{ $('[4] Prepare Posts').item.json.route === 'done' ? $('[4] Prepare Posts').item.json.result_status : ($json.error ? 'Failed' : 'Published') }}",
+              "type": "string"
+            },
+            {
+              "id": "20eebd89-cd17-d8b9-48c8-043e84000002",
+              "name": "platform_post_id",
+              "value": "={{ $('[4] Prepare Posts').item.json.route === 'done' || $json.error ? ($('[4] Prepare Posts').item.json.platform_post_id || '') : ($json.urn ?? $json.post_id ?? $json.id ?? '') }}",
+              "type": "string"
+            },
+            {
+              "id": "20eebd89-cd17-d8b9-48c8-043e84000003",
+              "name": "post_url",
+              "value": "={{ $('[4] Prepare Posts').item.json.route === 'done' || $json.error ? ($('[4] Prepare Posts').item.json.post_url || '') : $json.urn ? 'https://www.linkedin.com/feed/update/' + $json.urn + '/' : $json.post_id ? 'https://www.facebook.com/' + $json.post_id : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "20eebd89-cd17-d8b9-48c8-043e84000004",
+              "name": "published_at",
+              "value": "={{ ($('[4] Prepare Posts').item.json.route === 'done' ? ['Published (manual)'].includes($('[4] Prepare Posts').item.json.result_status) : !$json.error) ? $now.setZone('Asia/Ho_Chi_Minh').toFormat('yyyy-MM-dd HH:mm:ss') : ($('[4] Prepare Posts').item.json.published_at || '') }}",
+              "type": "string"
+            },
+            {
+              "id": "20eebd89-cd17-d8b9-48c8-043e84000005",
+              "name": "error_message",
+              "value": "={{ $('[4] Prepare Posts').item.json.route === 'done' ? $('[4] Prepare Posts').item.json.note : ($json.error ? 'Lỗi: ' + String($json.error?.message ?? $json.error ?? '').replace(/(access_token|token|secret)=([^&\\s\"']+)/gi, '$1=***').replace(/Bearer\\s+\\S+/gi, 'Bearer ***').slice(0, 400) : '') }}",
+              "type": "string"
+            },
+            {
+              "id": "20eebd89-cd17-d8b9-48c8-043e84000006",
+              "name": "publish_log",
+              "value": "={{ $('[4] Prepare Posts').item.json.log }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2180,
+        1000
+      ],
+      "id": "20eebd89-cd17-d8b9-48c8-043e843a5a5c",
+      "name": "[4] Save Result",
+      "notes": "GIẢ LẬP Google Sheets: hiển thị dữ liệu sẽ ghi"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f19d3f7f-479d-f066-7426-c5d531000000",
+              "name": "jd_id",
+              "value": "={{ 'jd-' + $json.execution.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f19d3f7f-479d-f066-7426-c5d531000001",
+              "name": "status",
+              "value": "Error",
+              "type": "string"
+            },
+            {
+              "id": "f19d3f7f-479d-f066-7426-c5d531000002",
+              "name": "error_message",
+              "value": "={{ String($json.execution.error?.message ?? 'Lỗi không rõ').replace(/(access_token|token|secret)=([^&\\s\"']+)/gi, '$1=***').slice(0, 400) + ' | Node lỗi: ' + $json.execution.lastNodeExecuted }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        1000
+      ],
+      "id": "f19d3f7f-479d-f066-7426-c5d5313deb2b",
+      "name": "[5] Set JD Error",
+      "notes": "GIẢ LẬP Google Sheets: hiển thị dữ liệu sẽ ghi"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        120
+      ],
+      "id": "b0000000-0000-4000-8000-000000000001",
+      "name": "[T] Run test"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b0000000-0000-4000-8000-000000000100",
+              "name": "Tên Công Ty",
+              "value": "Công ty Cổ phần Công nghệ Sao Mai",
+              "type": "string"
+            },
+            {
+              "id": "b0000000-0000-4000-8000-000000000101",
+              "name": "Vị Trí",
+              "value": "Lập trình viên Backend (Java)",
+              "type": "string"
+            },
+            {
+              "id": "b0000000-0000-4000-8000-000000000102",
+              "name": "Mức Lương",
+              "value": "25 - 35 triệu",
+              "type": "string"
+            },
+            {
+              "id": "b0000000-0000-4000-8000-000000000103",
+              "name": "Liên Hệ",
+              "value": "tuyendung@saomai-tech.vn - 0912 345 678 (Ms. Hằng)",
+              "type": "string"
+            },
+            {
+              "id": "b0000000-0000-4000-8000-000000000104",
+              "name": "Chi Tiết JD",
+              "value": "Công ty Cổ phần Công nghệ Sao Mai phát triển nền tảng thanh toán cho hơn 2.000 cửa hàng bán lẻ.\nĐịa điểm làm việc: Tầng 8, tòa nhà Viwaseen, 48 Tố Hữu, Nam Từ Liêm, Hà Nội.\nHình thức: Toàn thời gian, làm việc từ thứ 2 đến thứ 6 (8h30 - 17h30), hybrid 2 ngày/tuần tại nhà.\n\nMô tả công việc:\n- Thiết kế, phát triển và bảo trì các API thanh toán bằng Java 17, Spring Boot.\n- Tối ưu hiệu năng truy vấn PostgreSQL, Redis.\n- Viết unit test, tham gia code review.\n- Phối hợp với team Mobile và QA để release mỗi 2 tuần.\n\nYêu cầu:\n- Tối thiểu 3 năm kinh nghiệm lập trình Java backend.\n- Thành thạo Spring Boot, REST API, PostgreSQL.\n- Có kinh nghiệm với Kafka hoặc RabbitMQ là lợi thế.\n- Đọc hiểu tài liệu tiếng Anh.\n\nQuyền lợi:\n- Lương 25 - 35 triệu/tháng, review lương 2 lần/năm.\n- Thưởng tháng 13 và thưởng dự án.\n- Bảo hiểm sức khỏe PVI cho nhân viên.\n- 15 ngày phép/năm, laptop MacBook Pro.\n- Ngân sách đào tạo 10 triệu/năm.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        120
+      ],
+      "id": "b0000000-0000-4000-8000-000000000002",
+      "name": "[T] Sample JD"
+    }
+  ],
+  "connections": {
+    "[0] Every 5 minutes": {
+      "main": [
+        [
+          {
+            "node": "[0] Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[0] Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "[0] Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[0] Config": {
+      "main": [
+        [
+          {
+            "node": "[0] Route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[0] Route": {
+      "main": [
+        [
+          {
+            "node": "[1] Add JD Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[4] Read Posts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[5] Set JD Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[1] Add JD Row": {
+      "main": [
+        [
+          {
+            "node": "[1] AI Analyze & Write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[1] Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "[1] AI Analyze & Write",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[1] AI Analyze & Write": {
+      "main": [
+        [
+          {
+            "node": "[2] Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[2] Generate Image": {
+      "main": [
+        [
+          {
+            "node": "[2] Overlay Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[3] Check & Build Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[2] Overlay Text": {
+      "main": [
+        [
+          {
+            "node": "[2] Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[3] Check & Build Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[2] Upload to Drive": {
+      "main": [
+        [
+          {
+            "node": "[3] Check & Build Rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[3] Check & Build Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[3] Check & Build Rows": {
+      "main": [
+        [
+          {
+            "node": "[3] Save Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[3] Save Posts": {
+      "main": [
+        [
+          {
+            "node": "[3] Set JD Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Read Posts": {
+      "main": [
+        [
+          {
+            "node": "[4] Prepare Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Prepare Posts": {
+      "main": [
+        [
+          {
+            "node": "[4] Download Poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Download Poster": {
+      "main": [
+        [
+          {
+            "node": "[4] Route by Platform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Route by Platform": {
+      "main": [
+        [
+          {
+            "node": "[4] Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[4] Post LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[4] Threads Create",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[4] Post Facebook Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[4] Post Facebook Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Threads Create": {
+      "main": [
+        [
+          {
+            "node": "[4] Threads Publish",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[4] Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Post LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "[4] Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Threads Publish": {
+      "main": [
+        [
+          {
+            "node": "[4] Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Post Facebook Photo": {
+      "main": [
+        [
+          {
+            "node": "[4] Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[4] Post Facebook Text": {
+      "main": [
+        [
+          {
+            "node": "[4] Save Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[T] Run test": {
+      "main": [
+        [
+          {
+            "node": "[T] Sample JD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[T] Sample JD": {
+      "main": [
+        [
+          {
+            "node": "[0] Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[T] Ollama llama3.2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[1] AI Analyze & Write",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "[1] Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[3] Set JD Result": {
+      "main": [
+        [
+          {
+            "node": "[4] Read Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

@@ -1,0 +1,214 @@
+{
+  "updatedAt": "2026-10-28T04:34:02.891Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3TestPublish00",
+  "name": "[test] jd-publish-dry-run",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "id": "ebd68e75-8fd3-5723-a51d-49f0d7e95d3c",
+      "name": "[Test] Run manually"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3Config0000000",
+          "cachedResultName": "[dev] jd-config"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        220,
+        300
+      ],
+      "id": "7dfdd594-6e60-4850-a91f-1718cfab822e",
+      "name": "[Test] Load config"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // 4 bài mẫu (test-data/publish-sample-posts.json), ÉP dry_run = true để không bao giờ gọi API thật.\n  const cfg = { ...$input.first().json, dry_run: true, enable_linkedin: true, enable_threads: true, enable_facebook_page: true, enable_facebook_groups: true };\n  const SAMPLES = [{\"post_key\":\"sample-0001|linkedin\",\"jd_id\":\"sample-0001\",\"platform\":\"LinkedIn\",\"post_text\":\"Bạn muốn xây hệ thống thanh toán phục vụ hơn 2.000 cửa hàng mỗi ngày?\\n\\nCông ty Cổ phần Công nghệ Sao Mai đang tìm Lập trình viên Backend (Java) tại Hà Nội.\\n\\nBạn sẽ làm gì\\n• Thiết kế, phát triển API thanh toán với Java 17, Spring Boot\\n• Tối ưu hiệu năng PostgreSQL, Redis\\n\\nYêu cầu\\n• Tối thiểu 3 năm kinh nghiệm Java backend\\n\\nQuyền lợi\\n• Lương 25 - 35 triệu VNĐ/tháng, review 2 lần/năm\\n• Hybrid 2 ngày/tuần, MacBook Pro\\n\\nỨng tuyển: tuyendung@saomai-tech.vn - 0912 345 678\\n\\n#TuyenDung #Java #Backend #HaNoi\",\"hashtags\":\"#TuyenDung #Java #Backend #HaNoi\",\"poster_url\":\"\",\"poster_file_id\":\"\",\"status\":\"Approved\",\"approved_by\":\"tester\",\"scheduled_at\":\"\",\"published_at\":\"\",\"platform_post_id\":\"\",\"post_url\":\"\",\"error_message\":\"\",\"retry_count\":0},{\"post_key\":\"sample-0001|threads\",\"jd_id\":\"sample-0001\",\"platform\":\"Threads\",\"post_text\":\"Dân Java ơi, Sao Mai đang tuyển Backend ở Hà Nội nè 👀\\nLương 25 - 35 triệu, hybrid 2 ngày/tuần, được cấp MacBook Pro.\\nGửi CV về tuyendung@saomai-tech.vn hoặc gọi 0912 345 678 nhé!\\n\\n#TuyenDung #Java\",\"hashtags\":\"#TuyenDung #Java\",\"poster_url\":\"\",\"poster_file_id\":\"\",\"status\":\"Approved\",\"approved_by\":\"tester\",\"scheduled_at\":\"\",\"published_at\":\"\",\"platform_post_id\":\"\",\"post_url\":\"\",\"error_message\":\"\",\"retry_count\":0},{\"post_key\":\"sample-0001|facebook_groups\",\"jd_id\":\"sample-0001\",\"platform\":\"Facebook Groups\",\"post_text\":\"🔥 HÀ NỘI – TUYỂN LẬP TRÌNH VIÊN BACKEND (JAVA) – CÔNG NGHỆ SAO MAI\\n\\n📍 48 Tố Hữu, Nam Từ Liêm\\n💰 25 - 35 triệu VNĐ/tháng\\n✅ Từ 3 năm kinh nghiệm Java, Spring Boot\\n✅ Hybrid 2 ngày/tuần\\n\\n📩 Các bạn quan tâm gửi CV về tuyendung@saomai-tech.vn hoặc gọi 0912 345 678 (Ms. Hằng) nhé!\\n\\n#TuyenDung #ViecLamIT\",\"hashtags\":\"#TuyenDung #ViecLamIT\",\"poster_url\":\"\",\"poster_file_id\":\"\",\"status\":\"Approved\",\"approved_by\":\"tester\",\"scheduled_at\":\"\",\"published_at\":\"\",\"platform_post_id\":\"\",\"post_url\":\"\",\"error_message\":\"\",\"retry_count\":0},{\"post_key\":\"sample-0001|facebook_page\",\"jd_id\":\"sample-0001\",\"platform\":\"Facebook Page\",\"post_text\":\"Mỗi giao dịch thành công tại hơn 2.000 cửa hàng đều có dấu ấn của đội ngũ Sao Mai. ✨\\n\\nChúng mình đang tìm một Lập trình viên Backend (Java) cùng xây nền tảng thanh toán ổn định và nhanh hơn mỗi ngày.\\n\\nBạn phù hợp nếu bạn có từ 3 năm kinh nghiệm Java, yêu thích tối ưu hệ thống.\\n\\nQuyền lợi: lương 25 - 35 triệu VNĐ/tháng, thưởng tháng 13, bảo hiểm sức khỏe PVI, 15 ngày phép.\\n\\n👉 Gửi CV ngay hôm nay qua tuyendung@saomai-tech.vn hoặc gọi 0912 345 678.\\n\\n#TuyenDung #SaoMaiTech #Java\",\"hashtags\":\"#TuyenDung #SaoMaiTech #Java\",\"poster_url\":\"\",\"poster_file_id\":\"\",\"status\":\"Approved\",\"approved_by\":\"tester\",\"scheduled_at\":\"\",\"published_at\":\"\",\"platform_post_id\":\"\",\"post_url\":\"\",\"error_message\":\"\",\"retry_count\":0}];\n  return SAMPLES.map((p) => ({ json: { request: { post: { ...p, action: p.platform === 'Facebook Groups' ? 'manual_handoff' : 'publish' }, config: cfg } } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "id": "a0cdfaa2-925a-bd8b-8a7c-a30bda6767f7",
+      "name": "[Test] Sample approved posts",
+      "notes": "Why Code: nhúng dữ liệu mẫu và ép DRY_RUN."
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "jd3PublishOne000",
+          "cachedResultName": "[dev] jd-05a-publish-one"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        660,
+        300
+      ],
+      "id": "136df898-9640-81ab-98bd-66e7b582eaf5",
+      "name": "[Test] Run publish one"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Tóm tắt kết quả DRY_RUN cho 4 nền tảng.\n  const results = $input.all().map((i) => i.json);\n  return [{ json: { total: results.length, statuses: results.map((r) => `${r.platform}: ${r.status}`), logs: results.map((r) => r.publish_log) } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        300
+      ],
+      "id": "2a6f8d74-9907-7d22-2c6e-0ff9dc631bf5",
+      "name": "[Test] Summarize",
+      "notes": "Why Code: gộp 4 kết quả thành 1 báo cáo."
+    },
+    {
+      "parameters": {
+        "content": "## [test] DRY_RUN đăng bài\nChạy 4 bài mẫu qua `jd-05a-publish-one` với `dry_run` bị ép = true. Không đọc/ghi Google Sheets, không gọi API đăng.\nChạy: nút Test workflow, hoặc `docker compose exec n8n n8n execute --id=jd3TestPublish00`.",
+        "height": 200,
+        "width": 1000,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        40
+      ],
+      "id": "98d3b144-60fc-2244-a30f-b66587bd892f",
+      "name": "[Test] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Test] Run manually": {
+      "main": [
+        [
+          {
+            "node": "[Test] Load config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Test] Load config": {
+      "main": [
+        [
+          {
+            "node": "[Test] Sample approved posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Test] Sample approved posts": {
+      "main": [
+        [
+          {
+            "node": "[Test] Run publish one",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Test] Run publish one": {
+      "main": [
+        [
+          {
+            "node": "[Test] Summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "4b7bc6b5-325e-4f13-a609-26021e920d64",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3TestPublish00",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

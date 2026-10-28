@@ -1,0 +1,881 @@
+{
+  "updatedAt": "2026-10-28T04:48:45.868Z",
+  "createdAt": "2026-10-28T04:34:02.891Z",
+  "id": "jd3Poster0000000",
+  "name": "[dev] jd-03-poster",
+  "description": null,
+  "active": false,
+  "isArchived": true,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        300
+      ],
+      "id": "a30a7958-96f4-3f1c-144a-d1bc657beea4",
+      "name": "[Poster] When called"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "26c945bd-db3d-2387-ce1d-363597770584",
+              "name": "poster_position",
+              "value": "={{ (s => s.length <= 40 ? s : s.slice(0, 40).replace(/\\s+\\S*$/, '') + '…')(String($json.job.analysis.job_title_chuan || $json.job.form.position || '').trim()) }}",
+              "type": "string"
+            },
+            {
+              "id": "3a669c3a-5fd8-96ba-a5af-1eaf063af875",
+              "name": "poster_company",
+              "value": "={{ (s => s.length <= 26 ? s : s.slice(0, 26).replace(/\\s+\\S*$/, '') + '…')(String($json.job.form.company.replace(/^công ty\\s+((cổ phần|tnhh)(\\s+mtv)?\\s+)?/iu, '').toUpperCase() || '').trim()) }}",
+              "type": "string"
+            },
+            {
+              "id": "52f11420-f204-3fd9-e4c9-aa5e9fa74913",
+              "name": "poster_salary",
+              "value": "={{ /^\\s*(không nêu|khong neu)?\\s*$/i.test($json.job.analysis.muc_luong_chuan_hoa ?? '') ? ' ' : (s => s.length <= 40 ? s : s.slice(0, 40).replace(/\\s+\\S*$/, '') + '…')(String('Lương: ' + $json.job.analysis.muc_luong_chuan_hoa || '').trim()) }}",
+              "type": "string"
+            },
+            {
+              "id": "0cf5942a-9a11-2e4c-7812-f2fca07c3c96",
+              "name": "poster_highlights",
+              "value": "={{ ($json.job.analysis.diem_hap_dan || []).slice(0, 3).map(h => '• ' + (s => s.length <= 45 ? s : s.slice(0, 45).replace(/\\s+\\S*$/, '') + '…')(String(h || '').trim())).join('\\n') || ' ' }}",
+              "type": "string"
+            },
+            {
+              "id": "95ea438e-5963-ad1a-ffc7-35da65894206",
+              "name": "poster_contact",
+              "value": "={{ /^\\s*(không nêu|khong neu)?\\s*$/i.test($json.job.analysis.thong_tin_lien_he ?? '') ? ' ' : (s => s.length <= 52 ? s : s.slice(0, 52).replace(/\\s+\\S*$/, '') + '…')(String('Liên hệ: ' + $json.job.analysis.thong_tin_lien_he || '').trim()) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        300
+      ],
+      "id": "f0d4c17d-b347-320c-2224-23be5ada84f1",
+      "name": "[Poster] Select content"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "49086f78-d8ac-e2c4-9c37-26ffccf72e96",
+              "name": "industry",
+              "value": "={{ $json.job.analysis.nganh_nghe }}",
+              "type": "string"
+            },
+            {
+              "id": "53933c6b-a616-3aae-aabc-27ca2c421bc4",
+              "name": "visual",
+              "value": "={{ ({\"Công nghệ thông tin\":{\"style\":\"modern minimalist tech, clean geometric shapes, subtle circuit and data-flow motifs, soft glow\",\"palette\":\"#0B1F3A navy, #2F80ED electric blue, #56CCF2 cyan, white\",\"panel\":\"#0B1F3A26\",\"accent\":\"#56CCF2\"},\"F&B\":{\"style\":\"warm and cozy, natural daylight, appetizing food and cafe ambience, soft bokeh\",\"palette\":\"#3E2723 espresso brown, #F2994A warm orange, #F2C94C honey, cream\",\"panel\":\"#3E272326\",\"accent\":\"#F2C94C\"},\"Tài chính - Ngân hàng\":{\"style\":\"luxurious and trustworthy, elegant architecture, marble and gold accents, refined lighting\",\"palette\":\"#0A1A2F deep navy, #C9A227 gold, #E5E5E5 silver, white\",\"panel\":\"#0A1A2F26\",\"accent\":\"#C9A227\"},\"Bán lẻ\":{\"style\":\"vibrant and friendly retail store scene, colorful shelves, energetic\",\"palette\":\"#4A148C purple, #FF4081 pink, #FFD54F yellow, white\",\"panel\":\"#4A148C26\",\"accent\":\"#FFD54F\"},\"Sản xuất\":{\"style\":\"industrial and solid, modern factory, safety gear, strong perspective\",\"palette\":\"#263238 charcoal, #FF6F00 safety orange, #90A4AE steel, white\",\"panel\":\"#26323826\",\"accent\":\"#FF9800\"},\"Giáo dục\":{\"style\":\"bright and inspiring, books, classroom light, hopeful mood\",\"palette\":\"#1B3A4B teal navy, #27AE60 green, #F2C94C yellow, white\",\"panel\":\"#1B3A4B26\",\"accent\":\"#F2C94C\"},\"Y tế\":{\"style\":\"clean and caring, bright clinic, soft light, calm\",\"palette\":\"#0D3B66 medical blue, #2EC4B6 teal, #E0FBFC mint, white\",\"panel\":\"#0D3B6626\",\"accent\":\"#2EC4B6\"},\"Marketing - Truyền thông\":{\"style\":\"bold creative, dynamic shapes, studio lighting, trendy\",\"palette\":\"#1A1A2E midnight, #E94560 coral red, #F9ED69 lemon, white\",\"panel\":\"#1A1A2E26\",\"accent\":\"#F9ED69\"},\"Logistics\":{\"style\":\"dynamic movement, trucks and warehouse, motion lines, efficient\",\"palette\":\"#102A43 navy, #F0B429 amber, #9FB3C8 grey blue, white\",\"panel\":\"#102A4326\",\"accent\":\"#F0B429\"},\"Bất động sản\":{\"style\":\"premium modern architecture, skyline at golden hour\",\"palette\":\"#1C2833 graphite, #B9975B champagne gold, #D5D8DC light grey, white\",\"panel\":\"#1C283326\",\"accent\":\"#B9975B\"} })[$json.job.analysis.nganh_nghe] ?? {\"style\":\"clean corporate, modern office, professional and friendly\",\"palette\":\"#13293D dark blue, #1B98E0 blue, #E8F1F2 off-white, white\",\"panel\":\"#13293D26\",\"accent\":\"#1B98E0\"} }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        440,
+        300
+      ],
+      "id": "9408a51e-97bb-ad09-00d4-7630d9c87e87",
+      "name": "[Poster] Select visual style"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create the background prompt for a recruitment poster.\nIndustry (Vietnamese): {{ $json.industry }}\nJob title (meaning only, DO NOT render as text): {{ $json.poster_position }}\nKey skills (meaning only): {{ ($json.job.analysis.ky_nang_chinh || []).slice(0, 5).join(\", \") }}\nVisual style: {{ $json.visual.style }}\nPalette: {{ $json.visual.palette }}\nCanvas: 1024x1536 portrait. Bottom 40% must be a calm dark area for overlay text; top-left corner clear for a logo.",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "# ROLE\nYou are an art director who writes prompts for an AI image model (gpt-image-1) to create a VERTICAL recruitment poster BACKGROUND, 1024x1536 (2:3 portrait).\n\n# HARD RULES\n1. Write the prompt in ENGLISH only.\n2. The image model misspells Vietnamese diacritics, so the poster must contain NO TEXT, NO letters, NO numbers, NO fake logos, NO watermarks. All Vietnamese text (job title, company, salary, highlights, contact) is overlaid later by code.\n3. Layout: the TOP ~60% (y 0-920 px) holds the visual illustration/photo scene; the BOTTOM ~40% (y 920-1536 px) must be a CLEAN, calm, low-detail area in the dark base color of the palette so white text stays readable. Also keep a small clear zone in the top-left corner (about 220x220 px) for a company logo.\n4. Use the provided palette (hex colors) and visual style exactly; describe lighting, composition, mood, camera/illustration style.\n5. Represent the job and industry with symbolic, professional, diverse imagery (people of Southeast Asian appearance when people are shown). No brand names, no copyrighted characters, no real persons.\n6. Keep it under 900 characters.\n\nReturn JSON with:\n- `image_prompt`: the full English prompt.\n- `negative_notes`: short English list of things to avoid (text, letters, watermark...).\n- `layout_notes`: short English description of the reserved text/logo zones."
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        680,
+        300
+      ],
+      "id": "32b77de7-a28e-c367-11a9-7546537f2c88",
+      "name": "[Poster] Build image prompt",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-5-5"
+        },
+        "options": {
+          "temperature": 0.7,
+          "maxTokensToSample": 4096
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.6,
+      "position": [
+        560,
+        520
+      ],
+      "id": "4aeb4873-9aa7-c8d0-e084-15cf74ecb449",
+      "name": "[Poster] Model · Claude Haiku",
+      "credentials": {
+        "anthropicApi": {
+          "id": "anthropicLocal01",
+          "name": "Anthropic (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"image_prompt\": { \"type\": \"string\" },\n    \"negative_notes\": { \"type\": \"string\" },\n    \"layout_notes\": { \"type\": \"string\" }\n  },\n  \"required\": [\"image_prompt\", \"negative_notes\", \"layout_notes\"],\n  \"additionalProperties\": false\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        520
+      ],
+      "id": "83da94e8-dc70-bd6c-8889-4a79d54ed4d8",
+      "name": "[Poster] Parser · Image prompt"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "fileSelector": "={{ $('[Poster] Select visual style').first().json.job.config.logo_path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        940,
+        300
+      ],
+      "id": "73d1d738-445a-6522-993f-d210eb62efc5",
+      "name": "[Poster] Read logo file",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fe441d12-894a-4aea-301f-224a5b9fd053",
+              "leftValue": "={{ Boolean($binary?.data) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1160,
+        300
+      ],
+      "id": "3baeb5cf-7f48-5db8-fba8-3fcec85a3700",
+      "name": "[Poster] Has logo?"
+    },
+    {
+      "parameters": {
+        "jsCode": "  // Gộp prompt ảnh với binary logo, đổi tên binary thành \"logo\" cho OpenAI Edit Image.\n  const promptOut = $('[Poster] Build image prompt').first().json.output;\n  return $input.all().map((item) => ({\n    json: {\n      image_prompt: `${promptOut.image_prompt}\\nUse the provided image as the company logo: place it small, unchanged and undistorted, in the top-left reserved zone. Do not add any text, letters or numbers anywhere. Avoid: ${promptOut.negative_notes}`,\n    },\n    binary: { logo: item.binary.data },\n  }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        160
+      ],
+      "id": "53cafffa-844b-9b1a-a5ee-6d7281c34d93",
+      "name": "[Poster] Attach logo",
+      "notes": "Why Code: ghép JSON prompt với binary logo và đổi tên binary property trong cùng item."
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "edit",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Poster] Select visual style').first().json.job.config.image_model }}"
+        },
+        "prompt": "={{ $json.image_prompt }}",
+        "images": {
+          "values": [
+            {
+              "binaryPropertyName": "logo"
+            }
+          ]
+        },
+        "size": "1024x1536",
+        "quality": "high",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1600,
+        160
+      ],
+      "id": "036b1497-9855-704c-de5f-aab19d3f42ce",
+      "name": "[Poster] Generate image with logo",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiLocal00001",
+          "name": "OpenAI (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "generate",
+        "modelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Poster] Select visual style').first().json.job.config.image_model }}"
+        },
+        "prompt": "={{ $('[Poster] Build image prompt').first().json.output.image_prompt }}\nAvoid: {{ $('[Poster] Build image prompt').first().json.output.negative_notes }}",
+        "options": {
+          "size": "1024x1536",
+          "quality": "high"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1600,
+        420
+      ],
+      "id": "70b8c15c-cba7-426c-d65d-d8dd22648baf",
+      "name": "[Poster] Generate image",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "openAiApi": {
+          "id": "openAiLocal00001",
+          "name": "OpenAI (from .env)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1952cbbb-689c-c03f-6e3e-c0e1563a0430",
+              "leftValue": "={{ $('[Poster] Select visual style').first().json.job.config.enable_text_overlay }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        300
+      ],
+      "id": "907479ab-593b-da27-da4e-0d356a724061",
+      "name": "[Poster] Overlay enabled?"
+    },
+    {
+      "parameters": {
+        "operation": "multiStep",
+        "dataPropertyName": "data",
+        "operations": {
+          "operations": [
+            {
+              "operation": "draw",
+              "primitive": "rectangle",
+              "color": "={{ $('[Poster] Select visual style').first().json.visual.panel }}",
+              "startPositionX": 0,
+              "startPositionY": 940,
+              "endPositionX": 1024,
+              "endPositionY": 1536
+            },
+            {
+              "operation": "draw",
+              "primitive": "rectangle",
+              "color": "={{ $('[Poster] Select visual style').first().json.visual.accent }}",
+              "startPositionX": 72,
+              "startPositionY": 948,
+              "endPositionX": 232,
+              "endPositionY": 954
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('[Poster] Select visual style').first().json.poster_company }} TUYỂN DỤNG",
+              "fontSize": 34,
+              "fontColor": "={{ $('[Poster] Select visual style').first().json.visual.accent }}",
+              "positionX": 72,
+              "positionY": 1000,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 48,
+              "font": "={{ $('[Poster] Select visual style').first().json.job.config.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('[Poster] Select visual style').first().json.poster_position }}",
+              "fontSize": 62,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1065,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 24,
+              "font": "={{ $('[Poster] Select visual style').first().json.job.config.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('[Poster] Select visual style').first().json.poster_salary }}",
+              "fontSize": 44,
+              "fontColor": "={{ $('[Poster] Select visual style').first().json.visual.accent }}",
+              "positionX": 72,
+              "positionY": 1230,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 36,
+              "font": "={{ $('[Poster] Select visual style').first().json.job.config.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('[Poster] Select visual style').first().json.poster_highlights }}",
+              "fontSize": 30,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1300,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 52,
+              "font": "={{ $('[Poster] Select visual style').first().json.job.config.overlay_font }}"
+            },
+            {
+              "operation": "text",
+              "text": "={{ $('[Poster] Select visual style').first().json.poster_contact }}",
+              "fontSize": 32,
+              "fontColor": "#FFFFFF",
+              "positionX": 72,
+              "positionY": 1465,
+              "horizontalAlignment": "left",
+              "verticalAlignment": "top",
+              "lineLength": 52,
+              "font": "={{ $('[Poster] Select visual style').first().json.job.config.overlay_font }}"
+            }
+          ]
+        },
+        "options": {
+          "format": "png",
+          "fileName": "=poster-{{ $('[Poster] Select visual style').first().json.job.jd_id }}.png"
+        }
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1.1,
+      "position": [
+        2060,
+        160
+      ],
+      "id": "c80f675b-ca60-0033-83e0-a09ea998b6be",
+      "name": "[Poster] Overlay Vietnamese text",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "data",
+        "name": "=poster-{{ $('[Poster] Select visual style').first().json.job.jd_id }}.png",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive",
+          "cachedResultName": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('[Poster] Select visual style').first().json.job.config.drive_folder_id }}"
+        },
+        "options": {
+          "simplifyOutput": false
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2300,
+        300
+      ],
+      "id": "acb220f9-59ef-d640-49b5-719ccb134cd2",
+      "name": "[Poster] Upload to Drive",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "338887dc-86af-69c7-00d6-996f60159717",
+              "leftValue": "={{ $('[Poster] Select visual style').first().json.job.config.poster_share_mode }}",
+              "rightValue": "anyone",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2520,
+        300
+      ],
+      "id": "50324eeb-1062-aa8f-f147-84ba95dc95f4",
+      "name": "[Poster] Share publicly?"
+    },
+    {
+      "parameters": {
+        "operation": "share",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "permissionsUi": {
+          "permissionsValues": {
+            "role": "reader",
+            "type": "anyone"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2740,
+        200
+      ],
+      "id": "e239ee54-de99-392b-8a66-95e6cf185bcc",
+      "name": "[Poster] Share anyone with link",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e08ac40d-14ec-747d-1d2f-058cb0e182f9",
+              "name": "job",
+              "value": "={{ { ...$('[Poster] Select visual style').first().json.job, poster: { file_id: $('[Poster] Upload to Drive').first().json.id, url: $('[Poster] Upload to Drive').first().json.webViewLink ?? '', shared: $('[Poster] Select visual style').first().json.job.config.poster_share_mode === 'anyone', error: '' } } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2980,
+        300
+      ],
+      "id": "bf4a353f-ea5d-a1c0-b157-0c096ee22c61",
+      "name": "[Poster] Return job",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "328701ef-9cde-d8c7-798f-53de882f8db0",
+              "name": "job",
+              "value": "={{ { ...$('[Poster] Select visual style').first().json.job, poster: { file_id: '', url: '', shared: false, error: $prevNode.name + ': ' + String($json.error?.message ?? $json.error ?? 'lỗi không rõ').slice(0, 300) } } }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2980,
+        560
+      ],
+      "id": "e999f815-de02-c311-3734-229ec82e3b13",
+      "name": "[Poster] Return job without poster",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "content": "## 03 · Poster (lỗi mềm)\n**Input:** `job.analysis`, `job.form`, `job.config`. **Output:** `job.poster = {file_id, url, shared, error}`.\nMọi lỗi ảnh/overlay/Drive đi vào `Return job without poster` → bài vẫn được lưu. Mặc định poster **private** (`poster_share_mode`).\n**Lỗi thường gặp:** OpenAI chưa xác minh tổ chức; sai `drive_folder_id`; font không tồn tại.",
+        "height": 200,
+        "width": 1100,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        0
+      ],
+      "id": "73f8c3e4-28e5-1502-9502-fcee255e56ff",
+      "name": "[Poster] Ghi chú"
+    }
+  ],
+  "connections": {
+    "[Poster] Model · Claude Haiku": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "[Poster] Build image prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "[Poster] Parser · Image prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Parser · Image prompt": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "[Poster] Build image prompt",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] When called": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Select content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Select content": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Select visual style",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Select visual style": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Build image prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Build image prompt": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Read logo file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Read logo file": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Has logo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Has logo?": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Attach logo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Poster] Generate image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Attach logo": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Generate image with logo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Generate image with logo": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Overlay enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Poster] Return job without poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Generate image": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Overlay enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Poster] Return job without poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Overlay enabled?": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Overlay Vietnamese text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Poster] Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Overlay Vietnamese text": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Upload to Drive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Poster] Return job without poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Upload to Drive": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Share publicly?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Poster] Return job without poster",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Share publicly?": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Share anyone with link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "[Poster] Return job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "[Poster] Share anyone with link": {
+      "main": [
+        [
+          {
+            "node": "[Poster] Return job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "saveManualExecutions": true,
+    "errorWorkflow": "jd3ErrorHandler0"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "nodeGroups": [],
+  "pinData": {},
+  "versionId": "ee9c6934-6f24-4909-97c7-8bce415f1138",
+  "activeVersionId": null,
+  "versionCounter": 1,
+  "triggerCount": 0,
+  "sourceWorkflowId": null,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-10-28T04:34:02.891Z",
+      "createdAt": "2026-10-28T04:34:02.891Z",
+      "role": "workflow:owner",
+      "workflowId": "jd3Poster0000000",
+      "projectId": "kIM8MNkofrfUdLKC",
+      "project": {
+        "updatedAt": "2026-10-28T03:19:03.789Z",
+        "createdAt": "2026-10-28T03:15:44.895Z",
+        "id": "kIM8MNkofrfUdLKC",
+        "name": "Bảo Lê <baole0773620465@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "966ad08e-e6e4-4875-8586-3d5b1bf10841"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}
